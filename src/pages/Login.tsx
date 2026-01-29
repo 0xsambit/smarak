@@ -1,7 +1,31 @@
 import { ArrowRight, Landmark, Lock, Mail, Sparkles, Home } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import type { FormEvent } from "react";
+
+const DEMO_EMAIL = "demo@smarak.local";
+const DEMO_PASSWORD = "demo1234";
 
 export default function LoginPage() {
+	const navigate = useNavigate();
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [error, setError] = useState("");
+
+	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		setError("");
+
+		const normalizedEmail = email.trim().toLowerCase();
+		if (normalizedEmail === DEMO_EMAIL && password === DEMO_PASSWORD) {
+			localStorage.setItem("authToken", "demo-auth");
+			navigate("/dashboard");
+			return;
+		}
+
+		setError("Invalid email or password.");
+	};
+
 	return (
 		<div className="relative min-h-screen bg-linear-to-br from-black via-neutral-950 to-black text-white">
 			<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(196,247,60,0.06),transparent_30%),radial-gradient(circle_at_80%_10%,rgba(120,119,198,0.08),transparent_30%)]" />
@@ -33,7 +57,7 @@ export default function LoginPage() {
 							staff controls.
 						</p>
 
-						<form className="mt-8 space-y-5">
+						<form className="mt-8 space-y-5" onSubmit={handleSubmit}>
 							<label className="block space-y-2 text-sm">
 								<span className="text-zinc-300">Email address</span>
 								<div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/40 px-4 py-3 focus-within:border-emerald-400/60">
@@ -41,8 +65,11 @@ export default function LoginPage() {
 									<input
 										type="email"
 										name="email"
+										autoComplete="email"
 										className="w-full bg-transparent text-white outline-none placeholder:text-zinc-500"
 										placeholder="name@asi.gov.in"
+										value={email}
+										onChange={(event) => setEmail(event.target.value)}
 										required
 									/>
 								</div>
@@ -57,10 +84,20 @@ export default function LoginPage() {
 										name="password"
 										className="w-full bg-transparent text-white outline-none placeholder:text-zinc-500"
 										placeholder="••••"
+										value={password}
+										onChange={(event) =>
+											setPassword(event.target.value)
+										}
 										required
 									/>
 								</div>
 							</label>
+
+							<div className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-xs text-zinc-400">
+								Use demo login:{" "}
+								<span className="text-emerald-200">{DEMO_EMAIL}</span> /{" "}
+								<span className="text-emerald-200">{DEMO_PASSWORD}</span>
+							</div>
 
 							<div className="flex items-center justify-between text-sm text-zinc-400">
 								<label className="inline-flex items-center gap-2">
@@ -82,6 +119,12 @@ export default function LoginPage() {
 								Log in
 								<ArrowRight className="size-4 transition group-hover:translate-x-1" />
 							</button>
+
+							{error ? (
+								<p className="text-sm text-red-300" role="alert">
+									{error}
+								</p>
+							) : null}
 
 							<div className="flex items-center justify-between text-xs text-zinc-400">
 								<span>Trusted access for ASI & tourism partners.</span>
