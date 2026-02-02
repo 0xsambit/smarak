@@ -1,4 +1,10 @@
 @import "tailwindcss";
+
+@theme {
+    --font-serif: "Instrument Serif", serif;
+    --font-sans: "Instrument Sans", sans-serif;
+}
+
 .instrument-serif-regular {
     font-family: "Instrument Serif", serif;
     font-weight: 400;
