@@ -1,6 +1,8 @@
 import React from "react";
 import { Eye, CheckCircle } from "lucide-react";
 
+type DashboardScope = "national" | "state" | "site";
+
 interface ApprovalItem {
 	id: string;
 	type: string;
@@ -10,41 +12,91 @@ interface ApprovalItem {
 	priority: "High" | "Normal";
 }
 
-const queue: ApprovalItem[] = [
-	{
-		id: "REQ-2023-001",
-		type: "Budget Allocation",
-		site: "Qutub Minar Complex",
-		submittedBy: "R. Sharma (Site Manager)",
-		date: "Oct 12, 2023",
-		priority: "High",
-	},
-	{
-		id: "REQ-2023-002",
-		type: "Restoration Vendor",
-		site: "Sanchi Stupa",
-		submittedBy: "A. Patel (Conservationist)",
-		date: "Oct 13, 2023",
-		priority: "Normal",
-	},
-	{
-		id: "REQ-2023-003",
-		type: "Public Event Permit",
-		site: "Golconda Fort",
-		submittedBy: "Tourism Dept.",
-		date: "Oct 14, 2023",
-		priority: "Normal",
-	},
-];
+const queueByScope: Record<DashboardScope, ApprovalItem[]> = {
+	national: [
+		{
+			id: "REQ-2023-001",
+			type: "Budget Allocation",
+			site: "Qutub Minar Complex",
+			submittedBy: "R. Sharma (Site Manager)",
+			date: "Oct 12, 2023",
+			priority: "High",
+		},
+		{
+			id: "REQ-2023-002",
+			type: "Restoration Vendor",
+			site: "Sanchi Stupa",
+			submittedBy: "A. Patel (Conservationist)",
+			date: "Oct 13, 2023",
+			priority: "Normal",
+		},
+		{
+			id: "REQ-2023-003",
+			type: "Public Event Permit",
+			site: "Golconda Fort",
+			submittedBy: "Tourism Dept.",
+			date: "Oct 14, 2023",
+			priority: "Normal",
+		},
+	],
+	state: [
+		{
+			id: "REQ-STATE-104",
+			type: "Conservation Budget",
+			site: "Heritage Museum",
+			submittedBy: "State Heritage Office",
+			date: "Nov 02, 2023",
+			priority: "High",
+		},
+		{
+			id: "REQ-STATE-105",
+			type: "Maintenance Contract",
+			site: "Capital Heritage Park",
+			submittedBy: "Facilities Unit",
+			date: "Nov 03, 2023",
+			priority: "Normal",
+		},
+		{
+			id: "REQ-STATE-106",
+			type: "Event Permit",
+			site: "Riverfront Fort",
+			submittedBy: "Tourism Desk",
+			date: "Nov 04, 2023",
+			priority: "Normal",
+		},
+	],
+	site: [
+		{
+			id: "REQ-SITE-011",
+			type: "Zone Access Approval",
+			site: "Temple Complex",
+			submittedBy: "Site Ops Lead",
+			date: "Nov 05, 2023",
+			priority: "High",
+		},
+		{
+			id: "REQ-SITE-012",
+			type: "Equipment Request",
+			site: "Museum Wing",
+			submittedBy: "Security Team",
+			date: "Nov 06, 2023",
+			priority: "Normal",
+		},
+	],
+};
 
-const ActionQueue: React.FC = () => {
+const ActionQueue: React.FC<{ scope: DashboardScope }> = ({ scope }) => {
+	const queue = queueByScope[scope];
+	const locationLabel = scope === "site" ? "Zone" : "Site";
 	return (
 		<div className="bg-white border border-stone-200 rounded-lg shadow-sm overflow-hidden">
 			<div className="p-4 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
 				<h3 className="font-serif text-stone-900 font-medium heading-font">
 					Pending Approvals & Actions
 				</h3>
-				<span className="text-xs text-stone-500 font-medium">3 Pending</span>
+				<span className="text-xs text-stone-500 font-medium">
+					{queue.length} Pending
+				</span>
 			</div>
 
 			<div className="overflow-x-auto">
@@ -52,7 +104,7 @@ const ActionQueue: React.FC = () => {
 					<thead className="bg-stone-50 text-stone-500 uppercase text-xs font-semibold tracking-wider">
 						<tr>
 							<th className="px-6 py-3 font-medium">Request Type</th>
-							<th className="px-6 py-3 font-medium">Site</th>
+							<th className="px-6 py-3 font-medium">{locationLabel}</th>
 							<th className="px-6 py-3 font-medium">Submitted By</th>
 							<th className="px-6 py-3 font-medium">Date</th>
 							<th className="px-6 py-3 font-medium">Priority</th>

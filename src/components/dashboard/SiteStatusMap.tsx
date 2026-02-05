@@ -17,17 +17,50 @@ function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-// Mock Data for Regions
-const regions = [
-	{ name: "Northern Zone", status: "Critical", sites: 124, alerts: 3 },
-	{ name: "Eastern Circuit", status: "Stable", sites: 89, alerts: 0 },
-	{ name: "Western Ghats", status: "Attention", sites: 201, alerts: 1 },
-	{ name: "Southern Heritage", status: "Stable", sites: 156, alerts: 0 },
-	{ name: "Central Monuments", status: "Stable", sites: 98, alerts: 0 },
-];
+type DashboardScope = "national" | "state" | "site";
 
-const SiteStatusMap: React.FC = () => {
+interface RegionSummary {
+	name: string;
+	status: string;
+	sites: number;
+	alerts: number;
+}
+
+const regionDataByScope: Record<DashboardScope, RegionSummary[]> = {
+	national: [
+		{ name: "Northern Zone", status: "Critical", sites: 124, alerts: 3 },
+		{ name: "Eastern Circuit", status: "Stable", sites: 89, alerts: 0 },
+		{ name: "Western Ghats", status: "Attention", sites: 201, alerts: 1 },
+		{ name: "Southern Heritage", status: "Stable", sites: 156, alerts: 0 },
+		{ name: "Central Monuments", status: "Stable", sites: 98, alerts: 0 },
+	],
+	state: [
+		{ name: "Capital District", status: "Attention", sites: 36, alerts: 1 },
+		{ name: "River Plains", status: "Stable", sites: 52, alerts: 0 },
+		{ name: "Coastal Belt", status: "Critical", sites: 28, alerts: 2 },
+		{ name: "Highland Corridor", status: "Stable", sites: 44, alerts: 0 },
+		{ name: "Heritage Core", status: "Attention", sites: 31, alerts: 1 },
+	],
+	site: [
+		{ name: "North Gate", status: "Stable", sites: 4, alerts: 0 },
+		{ name: "Temple Complex", status: "Attention", sites: 6, alerts: 1 },
+		{ name: "Museum Wing", status: "Stable", sites: 3, alerts: 0 },
+		{ name: "Perimeter Path", status: "Critical", sites: 5, alerts: 2 },
+		{ name: "Visitor Plaza", status: "Stable", sites: 2, alerts: 0 },
+	],
+};
+
+const SiteStatusMap: React.FC<{ scope: DashboardScope }> = ({ scope }) => {
 	const [activeLayer, setActiveLayer] = useState<"status" | "weather" | "crowd">("status");
+	const regions = regionDataByScope[scope];
+	const scopeLabel = scope === "national" ? "National" : scope === "state" ? "State" : "Site";
+	const summaryLabel =
+		scope === "national"
+			? "Regional Summary"
+			: scope === "state"
+				? "State Summary"
+				: "Site Summary";
+	const unitLabel = scope === "site" ? "Zones" : "Sites";
 
 	return (
 		<div className="bg-white border border-stone-200 rounded-lg shadow-sm h-125 flex flex-col overflow-hidden relative">
@@ -35,7 +68,7 @@ const SiteStatusMap: React.FC = () => {
 			<div className="p-3 border-b border-stone-200 flex justify-between items-center bg-white z-10">
 				<div className="flex items-center gap-4">
 					<h3 className="font-serif text-stone-900 font-medium pl-2">
-						National Site Grid
+						{scopeLabel} Site Grid
 					</h3>
 					<div className="h-4 w-px bg-stone-300"></div>
 					<div className="flex gap-1 bg-stone-100 p-0.5 rounded-md">
@@ -115,7 +148,7 @@ const SiteStatusMap: React.FC = () => {
 				<div className="absolute top-4 left-4 w-64 bg-white/95 backdrop-blur-sm border border-stone-200 shadow-lg rounded-md overflow-hidden z-20">
 					<div className="p-3 border-b border-stone-100 bg-stone-50 flex justify-between items-center">
 						<span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">
-							Regional Summary
+							{summaryLabel}
 						</span>
 						<span className="text-[10px] text-stone-400">Live Updates</span>
 					</div>
@@ -129,7 +162,7 @@ const SiteStatusMap: React.FC = () => {
 										{region.name}
 									</div>
 									<div className="text-xs text-stone-500">
-										{region.sites} Sites Monitored
+										{region.sites} {unitLabel} Monitored
 									</div>
 								</div>
 								{region.alerts > 0 ? (

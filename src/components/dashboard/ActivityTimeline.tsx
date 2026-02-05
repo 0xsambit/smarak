@@ -1,42 +1,108 @@
 import React from "react";
 import { FileCheck, Hammer, CheckCircle2 } from "lucide-react";
 
-const activities = [
-	{
-		id: 1,
-		text: "Inspection report submitted",
-		site: "Ellora Caves",
-		time: "2 hours ago",
-		user: "Officer R. Singh",
-		icon: FileCheck,
-	},
-	{
-		id: 2,
-		text: "Restoration marked completed",
-		site: "Taj Mahal - Minaret 3",
-		time: "5 hours ago",
-		user: "Conservation Team A",
-		icon: CheckCircle2,
-	},
-	{
-		id: 3,
-		text: "Incident resolved",
-		site: "Red Fort",
-		time: "1 day ago",
-		user: "Security Head",
-		icon: Hammer,
-	},
-	{
-		id: 4,
-		text: "New site added to registry",
-		site: "Dholavira Excavations",
-		time: "2 days ago",
-		user: "Admin",
-		icon: FileCheck,
-	},
-];
+type DashboardScope = "national" | "state" | "site";
 
-const ActivityTimeline: React.FC = () => {
+interface ActivityItem {
+	id: number;
+	text: string;
+	site: string;
+	time: string;
+	user: string;
+	icon: React.ElementType;
+}
+
+const activitiesByScope: Record<DashboardScope, ActivityItem[]> = {
+	national: [
+		{
+			id: 1,
+			text: "Inspection report submitted",
+			site: "Ellora Caves",
+			time: "2 hours ago",
+			user: "Officer R. Singh",
+			icon: FileCheck,
+		},
+		{
+			id: 2,
+			text: "Restoration marked completed",
+			site: "Taj Mahal - Minaret 3",
+			time: "5 hours ago",
+			user: "Conservation Team A",
+			icon: CheckCircle2,
+		},
+		{
+			id: 3,
+			text: "Incident resolved",
+			site: "Red Fort",
+			time: "1 day ago",
+			user: "Security Head",
+			icon: Hammer,
+		},
+		{
+			id: 4,
+			text: "New site added to registry",
+			site: "Dholavira Excavations",
+			time: "2 days ago",
+			user: "Admin",
+			icon: FileCheck,
+		},
+	],
+	state: [
+		{
+			id: 1,
+			text: "District audit completed",
+			site: "Capital Heritage Park",
+			time: "3 hours ago",
+			user: "State Audit Team",
+			icon: FileCheck,
+		},
+		{
+			id: 2,
+			text: "Restoration batch approved",
+			site: "Riverfront Fort",
+			time: "6 hours ago",
+			user: "Conservation Board",
+			icon: CheckCircle2,
+		},
+		{
+			id: 3,
+			text: "Incident triaged",
+			site: "Hilltop Temple",
+			time: "1 day ago",
+			user: "Safety Office",
+			icon: Hammer,
+		},
+	],
+	site: [
+		{
+			id: 1,
+			text: "Daily inspection logged",
+			site: "North Gate",
+			time: "1 hour ago",
+			user: "Shift Supervisor",
+			icon: FileCheck,
+		},
+		{
+			id: 2,
+			text: "Maintenance completed",
+			site: "Museum Wing",
+			time: "4 hours ago",
+			user: "Facilities Team",
+			icon: CheckCircle2,
+		},
+		{
+			id: 3,
+			text: "Incident resolved",
+			site: "Perimeter Path",
+			time: "1 day ago",
+			user: "Security Desk",
+			icon: Hammer,
+		},
+	],
+};
+
+const ActivityTimeline: React.FC<{ scope: DashboardScope }> = ({ scope }) => {
+	const activities = activitiesByScope[scope];
 	return (
 		<div className="bg-white border border-stone-200 rounded-lg shadow-sm h-full flex flex-col">
 			<div className="p-4 border-b border-stone-100 bg-stone-50/50">

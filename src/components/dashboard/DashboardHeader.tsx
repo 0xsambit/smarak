@@ -1,7 +1,20 @@
 import React from "react";
 import { Bell, Map, Calendar, ChevronDown } from "lucide-react";
 
-const DashboardHeader: React.FC = () => {
+type DashboardScope = "national" | "state" | "site";
+
+interface DashboardHeaderProps {
+	scope: DashboardScope;
+	onScopeChange: (scope: DashboardScope) => void;
+}
+
+const scopeSubtitle: Record<DashboardScope, string> = {
+	national: "National Department of Archaeology",
+	state: "State Heritage Directorate",
+	site: "Site Operations Unit",
+};
+
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({ scope, onScopeChange }) => {
 	return (
 		<header className="bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
 			<div className="flex items-center gap-4">
@@ -10,10 +23,10 @@ const DashboardHeader: React.FC = () => {
 				</div>
 				<div>
 					<h1 className="text-xl font-serif text-stone-900 font-semibold tracking-tight">
-						HeritageGuard
+						ASI Kolkata Circle
 					</h1>
 					<p className="text-xs text-stone-500 uppercase tracking-widest font-medium">
-						National Department of Archaeology
+						{scopeSubtitle[scope]}
 					</p>
 				</div>
 			</div>
@@ -21,13 +34,31 @@ const DashboardHeader: React.FC = () => {
 			<div className="flex items-center gap-4">
 				{/* Scope Selector */}
 				<div className="hidden md:flex items-center text-sm border border-stone-200 rounded-md bg-stone-50 overflow-hidden">
-					<button className="px-4 py-1.5 bg-white shadow-sm font-medium text-stone-900 border-r border-stone-200">
+					<button
+						onClick={() => onScopeChange("national")}
+						className={`px-4 py-1.5 border-r border-stone-200 transition-colors ${
+							scope === "national"
+								? "bg-white shadow-sm font-medium text-stone-900"
+								: "text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+						}`}>
 						National
 					</button>
-					<button className="px-4 py-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors">
+					<button
+						onClick={() => onScopeChange("state")}
+						className={`px-4 py-1.5 transition-colors ${
+							scope === "state"
+								? "bg-white shadow-sm font-medium text-stone-900"
+								: "text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+						}`}>
 						State
 					</button>
-					<button className="px-4 py-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors">
+					<button
+						onClick={() => onScopeChange("site")}
+						className={`px-4 py-1.5 transition-colors ${
+							scope === "site"
+								? "bg-white shadow-sm font-medium text-stone-900"
+								: "text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+						}`}>
 						Site Level
 					</button>
 				</div>

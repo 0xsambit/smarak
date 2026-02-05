@@ -16,6 +16,8 @@ interface KPICardProps {
 	alert?: boolean;
 }
 
+type DashboardScope = "national" | "state" | "site";
+
 const KPICard: React.FC<KPICardProps> = ({ title, value, trend, trendUp, icon: Icon, alert }) => {
 	return (
 		<div
@@ -45,39 +47,116 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, trend, trendUp, icon: I
 	);
 };
 
-const KPIGrid: React.FC = () => {
+interface KPIGridProps {
+	scope: DashboardScope;
+}
+
+const KPI_DATA: Record<DashboardScope, KPICardProps[]> = {
+	national: [
+		{ title: "Total Heritage Sites", value: "3,842", icon: Landmark },
+		{
+			title: "Under Conservation",
+			value: "142",
+			trend: "+12% vs last month",
+			icon: Hammer,
+		},
+		{
+			title: "High Risk Sites",
+			value: "24",
+			trend: "Requires immediate review",
+			trendUp: false,
+			icon: AlertOctagon,
+			alert: true,
+		},
+		{
+			title: "Incidents (30d)",
+			value: "08",
+			trend: "-4 from last month",
+			trendUp: true,
+			icon: AlertTriangle,
+		},
+		{
+			title: "Visitor Footfall",
+			value: "1.2M",
+			trend: "+8.5% season",
+			trendUp: true,
+			icon: Users,
+		},
+		{ title: "Pending Approvals", value: "17", icon: FileText },
+	],
+	state: [
+		{ title: "Total Heritage Sites", value: "412", icon: Landmark },
+		{
+			title: "Under Conservation",
+			value: "28",
+			trend: "+5% vs last month",
+			icon: Hammer,
+		},
+		{
+			title: "High Risk Sites",
+			value: "6",
+			trend: "Focused inspections",
+			trendUp: false,
+			icon: AlertOctagon,
+			alert: true,
+		},
+		{
+			title: "Incidents (30d)",
+			value: "03",
+			trend: "-1 from last month",
+			trendUp: true,
+			icon: AlertTriangle,
+		},
+		{
+			title: "Visitor Footfall",
+			value: "220k",
+			trend: "+4.2% season",
+			trendUp: true,
+			icon: Users,
+		},
+		{ title: "Pending Approvals", value: "5", icon: FileText },
+	],
+	site: [
+		{ title: "Zones Monitored", value: "18", icon: Landmark },
+		{
+			title: "Active Work Orders",
+			value: "4",
+			trend: "+1 this week",
+			icon: Hammer,
+		},
+		{
+			title: "High Risk Zones",
+			value: "2",
+			trend: "Perimeter watch",
+			trendUp: false,
+			icon: AlertOctagon,
+			alert: true,
+		},
+		{
+			title: "Incidents (30d)",
+			value: "01",
+			trend: "Stable",
+			trendUp: true,
+			icon: AlertTriangle,
+		},
+		{
+			title: "Visitor Footfall",
+			value: "18.4k",
+			trend: "+2.1% season",
+			trendUp: true,
+			icon: Users,
+		},
+		{ title: "Pending Approvals", value: "2", icon: FileText },
+	],
+};
+
+const KPIGrid: React.FC<KPIGridProps> = ({ scope }) => {
+	const kpis = KPI_DATA[scope];
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-			<KPICard title="Total Heritage Sites" value="3,842" icon={Landmark} />
-			<KPICard
-				title="Under Conservation"
-				value="142"
-				trend="+12% vs last month"
-				icon={Hammer}
-			/>
-			<KPICard
-				title="High Risk Sites"
-				value="24"
-				trend="Requires immediate review"
-				trendUp={false}
-				icon={AlertOctagon}
-				alert
-			/>
-			<KPICard
-				title="Incidents (30d)"
-				value="08"
-				trend="-4 from last month"
-				trendUp={true}
-				icon={AlertTriangle}
-			/>
-			<KPICard
-				title="Visitor Footfall"
-				value="1.2M"
-				trend="+8.5% season"
-				trendUp={true}
-				icon={Users}
-			/>
-			<KPICard title="Pending Approvals" value="17" icon={FileText} />
+			{kpis.map((kpi) => (
+				<KPICard key={kpi.title} {...kpi} />
+			))}
 		</div>
 	);
 };

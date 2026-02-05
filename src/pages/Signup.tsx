@@ -1,9 +1,55 @@
-import { ArrowRight, Landmark, Lock, Mail, Sparkles, User, Home } from "lucide-react";
+import { ArrowRight, Lock, Mail, Sparkles, User, Home } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import type { FormEvent } from "react";
 
 export default function SignupPage() {
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [emailError, setEmailError] = useState("");
+	const [passwordError, setPasswordError] = useState("");
+	const [confirmPasswordError, setConfirmPasswordError] = useState("");
+
+	const validateEmail = (value: string) => {
+		const v = value.trim().toLowerCase();
+		// Simple RFC-like email check (sufficient for client-side validation)
+		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return re.test(v);
+	};
+
+	const validatePassword = (value: string) => {
+		// Minimum 8 chars, at least one letter and one number
+		const re = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
+		return re.test(value);
+	};
+
+	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		setEmailError("");
+		setPasswordError("");
+		setConfirmPasswordError("");
+
+		if (!validateEmail(email)) {
+			setEmailError("Please enter a valid email address.");
+			return;
+		}
+
+		if (!validatePassword(password)) {
+			setPasswordError(
+				"Password must be at least 8 characters and include a letter and a number.",
+			);
+			return;
+		}
+
+		if (password !== confirmPassword) {
+			setConfirmPasswordError("Passwords do not match.");
+			return;
+		}
+	};
+
 	return (
-		<div className="relative min-h-screen bg-linear-to-br from-black via-neutral-950 to-black text-white">
+		<div className="relative min-h-screen bg-linear-to-br from-black via-neutral-950 to-black text-white instrument-sans-regular">
 			<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(196,247,60,0.06),transparent_30%),radial-gradient(circle_at_80%_10%,rgba(120,119,198,0.08),transparent_30%)]" />
 			<div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.06),transparent_30%),linear-gradient(240deg,rgba(255,255,255,0.05),transparent_35%)]" />
 			{/* Back to Home Link */}
@@ -21,7 +67,7 @@ export default function SignupPage() {
 						<div className="pointer-events-none absolute inset-x-6 top-6 h-12 rounded-2xl border border-white/10" />
 
 						<div className="flex items-center gap-3 text-xl text-emerald-200 justify-center">
-							<Landmark className="size-5" /> Site Managment SaaS
+							Smarak
 						</div>
 						<h1 className="mt-4 text-3xl font-semibold text-white">
 							Create Account
@@ -31,7 +77,7 @@ export default function SignupPage() {
 							analytics.
 						</p>
 
-						<form className="mt-8 space-y-5">
+						<form className="mt-8 space-y-5" onSubmit={handleSubmit}>
 							<label className="block space-y-2 text-sm">
 								<span className="text-zinc-300">Full Name</span>
 								<div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/40 px-4 py-3 focus-within:border-emerald-400/60">
@@ -54,10 +100,25 @@ export default function SignupPage() {
 										type="email"
 										name="email"
 										className="w-full bg-transparent text-white outline-none placeholder:text-zinc-500"
-										placeholder="name@asi.gov.in"
+										value={email}
+										onChange={(event) => {
+											setEmail(event.target.value);
+											if (emailError) setEmailError("");
+										}}
+										aria-invalid={!!emailError}
+										aria-describedby={
+											emailError ? "email-error" : undefined
+										}
 										required
 									/>
 								</div>
+								{emailError ? (
+									<p
+										id="email-error"
+										className="text-xs text-red-300 mt-1">
+										{emailError}
+									</p>
+								) : null}
 							</label>
 
 							<label className="block space-y-2 text-sm">
@@ -69,9 +130,25 @@ export default function SignupPage() {
 										name="password"
 										className="w-full bg-transparent text-white outline-none placeholder:text-zinc-500"
 										placeholder="••••••••"
+										value={password}
+										onChange={(event) => {
+											setPassword(event.target.value);
+											if (passwordError) setPasswordError("");
+										}}
+										aria-invalid={!!passwordError}
+										aria-describedby={
+											passwordError ? "password-error" : undefined
+										}
 										required
 									/>
 								</div>
+								{passwordError ? (
+									<p
+										id="password-error"
+										className="text-xs text-red-300 mt-1">
+										{passwordError}
+									</p>
+								) : null}
 							</label>
 
 							<label className="block space-y-2 text-sm">
@@ -83,9 +160,28 @@ export default function SignupPage() {
 										name="confirmPassword"
 										className="w-full bg-transparent text-white outline-none placeholder:text-zinc-500"
 										placeholder="••••••••"
+										value={confirmPassword}
+										onChange={(event) => {
+											setConfirmPassword(event.target.value);
+											if (confirmPasswordError)
+												setConfirmPasswordError("");
+										}}
+										aria-invalid={!!confirmPasswordError}
+										aria-describedby={
+											confirmPasswordError
+												? "confirm-password-error"
+												: undefined
+										}
 										required
 									/>
 								</div>
+								{confirmPasswordError ? (
+									<p
+										id="confirm-password-error"
+										className="text-xs text-red-300 mt-1">
+										{confirmPasswordError}
+									</p>
+								) : null}
 							</label>
 
 							<div className="text-sm text-zinc-400">

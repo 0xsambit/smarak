@@ -21,6 +21,12 @@ export default function LoginPage() {
 		return re.test(v);
 	};
 
+	const validatePassword = (value: string) => {
+		// Minimum 8 chars, at least one letter and one number
+		const re = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
+		return re.test(value);
+	};
+
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setError("");
@@ -33,9 +39,11 @@ export default function LoginPage() {
 			return;
 		}
 
-		// Password length validation (minimum 8 characters)
-		if (password.length < 8) {
-			setPasswordError("Password must be at least 8 characters.");
+		// Password regex validation
+		if (!validatePassword(password)) {
+			setPasswordError(
+				"Password must be at least 8 characters and include a letter and a number.",
+			);
 			return;
 		}
 
@@ -97,12 +105,16 @@ export default function LoginPage() {
 											if (emailError) setEmailError("");
 										}}
 										aria-invalid={!!emailError}
-										aria-describedby={emailError ? "email-error" : undefined}
+										aria-describedby={
+											emailError ? "email-error" : undefined
+										}
 										required
 									/>
 								</div>
 								{emailError ? (
-									<p id="email-error" className="text-xs text-red-300 mt-1">
+									<p
+										id="email-error"
+										className="text-xs text-red-300 mt-1">
 										{emailError}
 									</p>
 								) : null}
@@ -123,12 +135,16 @@ export default function LoginPage() {
 											if (passwordError) setPasswordError("");
 										}}
 										aria-invalid={!!passwordError}
-										aria-describedby={passwordError ? "password-error" : undefined}
+										aria-describedby={
+											passwordError ? "password-error" : undefined
+										}
 										required
 									/>
 								</div>
 								{passwordError ? (
-									<p id="password-error" className="text-xs text-red-300 mt-1">
+									<p
+										id="password-error"
+										className="text-xs text-red-300 mt-1">
 										{passwordError}
 									</p>
 								) : null}
