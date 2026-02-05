@@ -37,7 +37,6 @@ export default function Home() {
 			<nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 backdrop-blur-md bg-black/30 border-b border-white/5">
 				<div className="mx-auto max-w-7xl flex items-center justify-between">
 					<Link to="/" className="flex items-center gap-3 text-xl">
-						<Landmark className="size-6 text-emerald-400" />
 						<span className="instrument-serif-regular font-semibold">Smarak</span>
 					</Link>
 					<div className="hidden md:flex items-center gap-8 text-sm instrument-sans-normal">
@@ -80,7 +79,7 @@ export default function Home() {
 					muted
 					loop
 					playsInline
-					className="absolute inset-0 w-full h-full object-cover opacity-30">
+					className="absolute inset-0 w-full h-full object-cover">
 					<source src="/bg_vid.mp4" type="video/mp4" />
 				</video>
 				<div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/50 to-black" />

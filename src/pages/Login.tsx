@@ -11,10 +11,33 @@ export default function LoginPage() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [error, setError] = useState("");
+	const [emailError, setEmailError] = useState("");
+	const [passwordError, setPasswordError] = useState("");
+
+	const validateEmail = (value: string) => {
+		const v = value.trim().toLowerCase();
+		// Simple RFC-like email check (sufficient for client-side validation)
+		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		return re.test(v);
+	};
 
 	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 		setError("");
+		setEmailError("");
+		setPasswordError("");
+
+		// Email validation
+		if (!validateEmail(email)) {
+			setEmailError("Please enter a valid email address.");
+			return;
+		}
+
+		// Password length validation (minimum 8 characters)
+		if (password.length < 8) {
+			setPasswordError("Password must be at least 8 characters.");
+			return;
+		}
 
 		const normalizedEmail = email.trim().toLowerCase();
 		if (normalizedEmail === DEMO_EMAIL && password === DEMO_PASSWORD) {
@@ -69,10 +92,20 @@ export default function LoginPage() {
 										className="w-full bg-transparent text-white outline-none placeholder:text-zinc-500"
 										placeholder="name@asi.gov.in"
 										value={email}
-										onChange={(event) => setEmail(event.target.value)}
+										onChange={(event) => {
+											setEmail(event.target.value);
+											if (emailError) setEmailError("");
+										}}
+										aria-invalid={!!emailError}
+										aria-describedby={emailError ? "email-error" : undefined}
 										required
 									/>
 								</div>
+								{emailError ? (
+									<p id="email-error" className="text-xs text-red-300 mt-1">
+										{emailError}
+									</p>
+								) : null}
 							</label>
 
 							<label className="block space-y-2 text-sm">
@@ -85,12 +118,20 @@ export default function LoginPage() {
 										className="w-full bg-transparent text-white outline-none placeholder:text-zinc-500"
 										placeholder="••••"
 										value={password}
-										onChange={(event) =>
-											setPassword(event.target.value)
-										}
+										onChange={(event) => {
+											setPassword(event.target.value);
+											if (passwordError) setPasswordError("");
+										}}
+										aria-invalid={!!passwordError}
+										aria-describedby={passwordError ? "password-error" : undefined}
 										required
 									/>
 								</div>
+								{passwordError ? (
+									<p id="password-error" className="text-xs text-red-300 mt-1">
+										{passwordError}
+									</p>
+								) : null}
 							</label>
 
 							<div className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-xs text-zinc-400">
