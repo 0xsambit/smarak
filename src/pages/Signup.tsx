@@ -13,7 +13,7 @@ export default function SignupPage() {
 
 	const validateEmail = (value: string) => {
 		const v = value.trim().toLowerCase();
-		// Simple RFC-like email check (sufficient for client-side validation)
+
 		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		return re.test(v);
 	};
