@@ -1,62 +1,8 @@
-import { ArrowRight, Landmark, Lock, Mail, Sparkles, Home } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
-import type { FormEvent } from "react";
-
-const DEMO_EMAIL = "demo@smarak.local";
-const DEMO_PASSWORD = "demo1234";
+import { SignIn } from "@clerk/clerk-react";
+import { Link } from "react-router-dom";
+import { Home } from "lucide-react";
 
 export default function LoginPage() {
-	const navigate = useNavigate();
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [error, setError] = useState("");
-	const [emailError, setEmailError] = useState("");
-	const [passwordError, setPasswordError] = useState("");
-
-	const validateEmail = (value: string) => {
-		const v = value.trim().toLowerCase();
-		// Simple RFC-like email check (sufficient for client-side validation)
-		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		return re.test(v);
-	};
-
-	const validatePassword = (value: string) => {
-		// Minimum 8 chars, at least one letter and one number
-		const re = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
-		return re.test(value);
-	};
-
-	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		setError("");
-		setEmailError("");
-		setPasswordError("");
-
-		// Email validation
-		if (!validateEmail(email)) {
-			setEmailError("Please enter a valid email address.");
-			return;
-		}
-
-		// Password regex validation
-		if (!validatePassword(password)) {
-			setPasswordError(
-				"Password must be at least 8 characters and include a letter and a number.",
-			);
-			return;
-		}
-
-		const normalizedEmail = email.trim().toLowerCase();
-		if (normalizedEmail === DEMO_EMAIL && password === DEMO_PASSWORD) {
-			localStorage.setItem("authToken", "demo-auth");
-			navigate("/dashboard");
-			return;
-		}
-
-		setError("Invalid email or password.");
-	};
-
 	return (
 		<div className="relative min-h-screen bg-linear-to-br from-black via-neutral-950 to-black text-white">
 			<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(196,247,60,0.06),transparent_30%),radial-gradient(circle_at_80%_10%,rgba(120,119,198,0.08),transparent_30%)]" />
@@ -71,137 +17,32 @@ export default function LoginPage() {
 			</Link>
 
 			<div className="relative z-10 mx-auto flex min-h-screen max-w-2xl items-center justify-center px-4 py-12">
-				<div className="w-full">
-					<div className="relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-b from-white/10 via-white/5 to-black/40 p-10 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-						<div className="pointer-events-none absolute -left-32 -top-32 size-64 rounded-full bg-emerald-500/15 blur-3xl" />
-						<div className="pointer-events-none absolute -right-24 -bottom-24 size-64 rounded-full bg-amber-400/15 blur-3xl" />
-						<div className="pointer-events-none absolute inset-x-6 top-6 h-12 rounded-2xl border border-white/10" />
-
-						<div className="flex items-center gap-3 text-xl text-emerald-200 justify-center">
-							<Landmark className="size-5" /> Site Managment SaaS
-						</div>
-						<h1 className="mt-4 text-3xl font-semibold text-white">
-							Secure Login
-						</h1>
-						<p className="mt-2 text-sm text-zinc-400">
-							Access real-time heritage operations, visitor analytics, and
-							staff controls.
-						</p>
-
-						<form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-							<label className="block space-y-2 text-sm">
-								<span className="text-zinc-300">Email address</span>
-								<div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/40 px-4 py-3 focus-within:border-emerald-400/60">
-									<Mail className="size-5 text-emerald-300" />
-									<input
-										type="email"
-										name="email"
-										autoComplete="email"
-										className="w-full bg-transparent text-white outline-none placeholder:text-zinc-500"
-										placeholder="name@asi.gov.in"
-										value={email}
-										onChange={(event) => {
-											setEmail(event.target.value);
-											if (emailError) setEmailError("");
-										}}
-										aria-invalid={!!emailError}
-										aria-describedby={
-											emailError ? "email-error" : undefined
-										}
-										required
-									/>
-								</div>
-								{emailError ? (
-									<p
-										id="email-error"
-										className="text-xs text-red-300 mt-1">
-										{emailError}
-									</p>
-								) : null}
-							</label>
-
-							<label className="block space-y-2 text-sm">
-								<span className="text-zinc-300">Password</span>
-								<div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/40 px-4 py-3 focus-within:border-emerald-400/60">
-									<Lock className="size-5 text-emerald-300" />
-									<input
-										type="password"
-										name="password"
-										className="w-full bg-transparent text-white outline-none placeholder:text-zinc-500"
-										placeholder="••••"
-										value={password}
-										onChange={(event) => {
-											setPassword(event.target.value);
-											if (passwordError) setPasswordError("");
-										}}
-										aria-invalid={!!passwordError}
-										aria-describedby={
-											passwordError ? "password-error" : undefined
-										}
-										required
-									/>
-								</div>
-								{passwordError ? (
-									<p
-										id="password-error"
-										className="text-xs text-red-300 mt-1">
-										{passwordError}
-									</p>
-								) : null}
-							</label>
-
-							<div className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-xs text-zinc-400">
-								Use demo login:{" "}
-								<span className="text-emerald-200">{DEMO_EMAIL}</span> /{" "}
-								<span className="text-emerald-200">{DEMO_PASSWORD}</span>
-							</div>
-
-							<div className="flex items-center justify-between text-sm text-zinc-400">
-								<label className="inline-flex items-center gap-2">
-									<input
-										type="checkbox"
-										defaultChecked
-										className="h-4 w-4 rounded border-white/20 bg-white/10"
-									/>
-									Keep me signed in (secure devices)
-								</label>
-								<span className="text-emerald-300 hover:text-emerald-200 cursor-pointer">
-									Need help?
-								</span>
-							</div>
-
-							<button
-								type="submit"
-								className="group flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 py-3 text-black font-semibold shadow-[0_12px_40px_rgba(52,211,153,0.35)] transition hover:bg-emerald-300">
-								Log in
-								<ArrowRight className="size-4 transition group-hover:translate-x-1" />
-							</button>
-
-							{error ? (
-								<p className="text-sm text-red-300" role="alert">
-									{error}
-								</p>
-							) : null}
-
-							<div className="flex items-center justify-between text-xs text-zinc-400">
-								<span>Trusted access for ASI & tourism partners.</span>
-								<span className="flex items-center gap-1 text-emerald-200">
-									<Sparkles className="size-4" />
-									Live beta
-								</span>
-							</div>
-
-							<div className="text-center text-sm text-zinc-400">
-								<span>Don't have an account? </span>
-								<Link
-									to="/signup"
-									className="text-emerald-300 hover:text-emerald-200 font-medium">
-									Sign up
-								</Link>
-							</div>
-						</form>
-					</div>
-				</div>
+				<SignIn
+					forceRedirectUrl="/dashboard"
+					signUpUrl="/signup"
+					appearance={{
+						elements: {
+							formButtonPrimary:
+								"bg-emerald-400 hover:bg-emerald-300 text-black shadow-[0_12px_40px_rgba(52,211,153,0.35)]",
+							card: "bg-white/10 backdrop-blur-xl border-white/10 shadow-[0_30px_120px_rgba(0,0,0,0.45)]",
+							headerTitle: "text-white",
+							headerSubtitle: "text-zinc-400",
+							socialButtonsBlockButton:
+								"bg-white/10 border-white/10 text-white hover:bg-white/20",
+							socialButtonsBlockButtonText: "text-white",
+							formFieldLabel: "text-zinc-300",
+							formFieldInput:
+								"bg-black/40 border-white/10 text-white placeholder:text-zinc-500 focus:border-emerald-400/60",
+							footerActionLink: "text-emerald-300 hover:text-emerald-200",
+							identityPreviewText: "text-white",
+							identityPreviewEditButton: "text-emerald-300",
+							formFieldInputShowPasswordButton:
+								"text-zinc-400 hover:text-zinc-300",
+							dividerLine: "bg-white/10",
+							dividerText: "text-zinc-400",
+						},
+					}}
+				/>
 			</div>
 		</div>
 	);

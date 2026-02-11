@@ -1,22 +1,24 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 import type { ReactNode } from "react";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 
-const isAuthed = () => Boolean(localStorage.getItem("authToken"));
-
 type ProtectedRouteProps = {
 	children: ReactNode;
 };
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-	if (!isAuthed()) {
-		return <Navigate to="/login" replace />;
-	}
-
-	return <>{children}</>;
+	return (
+		<>
+			<SignedIn>{children}</SignedIn>
+			<SignedOut>
+				<RedirectToSignIn />
+			</SignedOut>
+		</>
+	);
 };
 
 const App = () => {

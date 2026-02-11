@@ -12,6 +12,7 @@ import {
 	CheckCircle2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 
 const heritageImages = [
 	"/img1.webp",
@@ -57,16 +58,26 @@ export default function Home() {
 						</a>
 					</div>
 					<div className="flex items-center gap-3">
-						<Link
-							to="/login"
-							className="instrument-sans-normal text-sm px-4 py-2 text-zinc-300 hover:text-white transition">
-							Log in
-						</Link>
-						<Link
-							to="/signup"
-							className="instrument-sans-semibold text-sm px-4 py-2 bg-emerald-400 text-black rounded hover:bg-emerald-300 transition">
-							Sign up
-						</Link>
+						<SignedOut>
+							<Link
+								to="/login"
+								className="instrument-sans-normal text-sm px-4 py-2 text-zinc-300 hover:text-white transition">
+								Log in
+							</Link>
+							<Link
+								to="/signup"
+								className="instrument-sans-semibold text-sm px-4 py-2 bg-emerald-400 text-black rounded hover:bg-emerald-300 transition">
+								Sign up
+							</Link>
+						</SignedOut>
+						<SignedIn>
+							<Link
+								to="/dashboard"
+								className="instrument-sans-normal text-sm px-4 py-2 text-zinc-300 hover:text-white transition">
+								Dashboard
+							</Link>
+							<UserButton afterSignOutUrl="/" />
+						</SignedIn>
 					</div>
 				</div>
 			</nav>

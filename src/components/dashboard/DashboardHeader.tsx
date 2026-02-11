@@ -1,5 +1,6 @@
 import React from "react";
 import { Bell, Map, Calendar, ChevronDown } from "lucide-react";
+import { UserButton } from "@clerk/clerk-react";
 
 type DashboardScope = "national" | "state" | "site";
 
@@ -78,9 +79,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ scope, onScopeChange 
 					<span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-600 rounded-full border border-white"></span>
 				</button>
 
-				<div className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center text-stone-600 font-medium text-xs border border-stone-300">
-					JD
-				</div>
+				{/* User Profile & Logout */}
+				<UserButton
+					afterSignOutUrl="/"
+					appearance={{
+						elements: {
+							avatarBox: "w-8 h-8",
+						},
+					}}
+				/>
 			</div>
 		</header>
 	);
