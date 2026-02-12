@@ -38,8 +38,8 @@ export class Incident extends Document {
   @Prop({ required: true, enum: IncidentStatus, default: IncidentStatus.OPEN, index: true })
   status: IncidentStatus;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  reportedBy: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  reportedBy?: Types.ObjectId;
 
   @Prop()
   resolvedAt?: Date;

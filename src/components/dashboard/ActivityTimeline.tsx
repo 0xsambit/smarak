@@ -101,8 +101,41 @@ const activitiesByScope: Record<DashboardScope, ActivityItem[]> = {
 	],
 };
 
-const ActivityTimeline: React.FC<{ scope: DashboardScope }> = ({ scope }) => {
-	const activities = activitiesByScope[scope];
+interface ActivityTimelineProps {
+	scope: DashboardScope;
+	recentActivity?: Array<{
+		id: string;
+		type: string;
+		text: string;
+		site: string;
+		time: string;
+		user: string;
+	}>;
+}
+
+// Map activity types to icons
+const iconMap: Record<string, React.ElementType> = {
+	incident: Hammer,
+	conservation: CheckCircle2,
+	approval: FileCheck,
+	default: FileCheck,
+};
+
+const ActivityTimeline: React.FC<ActivityTimelineProps> = ({ scope, recentActivity }) => {
+	const mockActivities = activitiesByScope[scope];
+
+	// Convert API activity to display format
+	const activities =
+		recentActivity && recentActivity.length > 0
+			? recentActivity.map((act, index) => ({
+					id: parseInt(act.id) || index,
+					text: act.text,
+					site: act.site,
+					time: act.time,
+					user: act.user,
+					icon: iconMap[act.type] || iconMap.default,
+				}))
+			: mockActivities;
 	return (
 		<div className="bg-white border border-stone-200 rounded-lg shadow-sm h-full flex flex-col">
 			<div className="p-4 border-b border-stone-100 bg-stone-50/50">

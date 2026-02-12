@@ -76,7 +76,7 @@ export class UsersController {
           clerkId: userData.id,
           name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'Unknown',
           email: userData.email_addresses?.[0]?.email_address || 'no-email@example.com',
-          role: userData.public_metadata?.role || UserRole.SITE_OFFICER,
+          role: userData.public_metadata?.role || UserRole.STATE_ADMIN,
         };
         await this.usersService.create(newUser);
         this.logger.log(`User created: ${newUser.clerkId}`);

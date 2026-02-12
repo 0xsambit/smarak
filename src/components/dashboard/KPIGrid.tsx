@@ -49,6 +49,14 @@ const KPICard: React.FC<KPICardProps> = ({ title, value, trend, trendUp, icon: I
 
 interface KPIGridProps {
 	scope: DashboardScope;
+	kpis?: {
+		totalSites: number;
+		highRiskSites: number;
+		activeIncidents: number;
+		pendingApprovals: number;
+		conservationOngoing: number;
+		visitorCapacity: number;
+	};
 }
 
 const KPI_DATA: Record<DashboardScope, KPICardProps[]> = {
@@ -150,8 +158,37 @@ const KPI_DATA: Record<DashboardScope, KPICardProps[]> = {
 	],
 };
 
-const KPIGrid: React.FC<KPIGridProps> = ({ scope }) => {
-	const kpis = KPI_DATA[scope];
+const KPIGrid: React.FC<KPIGridProps> = ({ scope, kpis: apiKpis }) => {
+	// Use API data if available, otherwise fall back to mock data
+	const kpis = apiKpis
+		? [
+				{ title: "Total Heritage Sites", value: apiKpis.totalSites, icon: Landmark },
+				{
+					title: "Under Conservation",
+					value: apiKpis.conservationOngoing,
+					icon: Hammer,
+				},
+				{
+					title: "High Risk Sites",
+					value: apiKpis.highRiskSites,
+					trendUp: false,
+					icon: AlertOctagon,
+					alert: apiKpis.highRiskSites > 0,
+				},
+				{
+					title: "Active Incidents",
+					value: apiKpis.activeIncidents,
+					icon: AlertTriangle,
+				},
+				{
+					title: "Visitor Capacity",
+					value: apiKpis.visitorCapacity.toLocaleString(),
+					icon: Users,
+				},
+				{ title: "Pending Approvals", value: apiKpis.pendingApprovals, icon: FileText },
+			]
+		: KPI_DATA[scope];
+
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
 			{kpis.map((kpi) => (

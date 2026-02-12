@@ -41,8 +41,13 @@ const dataByScope: Record<DashboardScope, Array<{ day: string; visitors: number 
 	],
 };
 
-const FootfallSnapshot: React.FC<{ scope: DashboardScope }> = ({ scope }) => {
-	const data = dataByScope[scope];
+interface FootfallSnapshotProps {
+	scope: DashboardScope;
+	footfallTrend?: Array<{ day: string; visitors: number }>;
+}
+
+const FootfallSnapshot: React.FC<FootfallSnapshotProps> = ({ scope, footfallTrend }) => {
+	const data = footfallTrend && footfallTrend.length > 0 ? footfallTrend : dataByScope[scope];
 	const scopeLabel = scope === "national" ? "National" : scope === "state" ? "State" : "Site";
 	return (
 		<div className="bg-white border border-stone-200 rounded-lg shadow-sm h-full flex flex-col">

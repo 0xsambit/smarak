@@ -104,8 +104,19 @@ const alertsByScope: Record<DashboardScope, Alert[]> = {
 	],
 };
 
-const RiskAlertPanel: React.FC<{ scope: DashboardScope }> = ({ scope }) => {
+interface RiskAlertPanelProps {
+	scope: DashboardScope;
+	incidentsBySeverity?: {
+		LOW: number;
+		MEDIUM: number;
+		HIGH: number;
+	};
+}
+
+const RiskAlertPanel: React.FC<RiskAlertPanelProps> = ({ scope, incidentsBySeverity }) => {
 	const alerts = alertsByScope[scope];
+	const highCount =
+		incidentsBySeverity?.HIGH || alerts.filter((a) => a.priority === "High").length;
 	const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
 
 	const closeModal = () => setSelectedAlert(null);
@@ -118,7 +129,7 @@ const RiskAlertPanel: React.FC<{ scope: DashboardScope }> = ({ scope }) => {
 						Critical Alerts
 					</h3>
 					<span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
-						{alerts.filter((a) => a.priority === "High").length} Critical
+						{highCount} Critical
 					</span>
 				</div>
 

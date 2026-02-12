@@ -28,8 +28,8 @@ export class Approval extends Document {
   @Prop()
   description?: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  submittedBy: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  submittedBy?: Types.ObjectId;
 
   @Prop({ required: true, enum: ApprovalStatus, default: ApprovalStatus.PENDING, index: true })
   status: ApprovalStatus;

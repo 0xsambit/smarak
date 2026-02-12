@@ -50,9 +50,20 @@ const regionDataByScope: Record<DashboardScope, RegionSummary[]> = {
 	],
 };
 
-const SiteStatusMap: React.FC<{ scope: DashboardScope }> = ({ scope }) => {
+interface SiteStatusMapProps {
+	scope: DashboardScope;
+	regionSummary?: Array<{
+		name: string;
+		sites: number;
+		alerts: number;
+		status: string;
+	}>;
+}
+
+const SiteStatusMap: React.FC<SiteStatusMapProps> = ({ scope, regionSummary }) => {
 	const [activeLayer, setActiveLayer] = useState<"status" | "weather" | "crowd">("status");
-	const regions = regionDataByScope[scope];
+	const regions =
+		regionSummary && regionSummary.length > 0 ? regionSummary : regionDataByScope[scope];
 	const scopeLabel = scope === "national" ? "National" : scope === "state" ? "State" : "Site";
 	const summaryLabel =
 		scope === "national"

@@ -37,9 +37,8 @@ async function seed() {
     const ApprovalModel = connection.model('Approval', ApprovalSchema);
     const FootfallModel = connection.model('Footfall', FootfallSchema);
 
-    // Clear existing data
+    // Clear existing data (excluding users - they're managed by Clerk)
     await Promise.all([
-      UserModel.deleteMany({}),
       SiteModel.deleteMany({}),
       IncidentModel.deleteMany({}),
       ConservationModel.deleteMany({}),
@@ -47,40 +46,7 @@ async function seed() {
       FootfallModel.deleteMany({}),
     ]);
     console.log('🗑️  Cleared existing data\n');
-
-    // Create users
-    console.log('👥 Creating users...');
-    const users = await UserModel.insertMany([
-      {
-        clerkId: 'user_national_admin_001',
-        name: 'Dr. Rajesh Kumar',
-        email: 'rajesh.kumar@asi.gov.in',
-        role: UserRole.NATIONAL_ADMIN,
-        isActive: true,
-      },
-      {
-        clerkId: 'user_state_admin_001',
-        name: 'Priya Sharma',
-        email: 'priya.sharma@up.asi.gov.in',
-        role: UserRole.STATE_ADMIN,
-        isActive: true,
-      },
-      {
-        clerkId: 'user_site_officer_001',
-        name: 'Amit Verma',
-        email: 'amit.verma@tajmahal.asi.gov.in',
-        role: UserRole.SITE_OFFICER,
-        isActive: true,
-      },
-      {
-        clerkId: 'user_state_admin_002',
-        name: 'Sunita Reddy',
-        email: 'sunita.reddy@telangana.asi.gov.in',
-        role: UserRole.STATE_ADMIN,
-        isActive: true,
-      },
-    ]);
-    console.log(`✅ Created ${users.length} users\n`);
+    console.log('ℹ️  Note: Users are created via Clerk authentication, not seeded\n');
 
     // Create heritage sites
     console.log('🏛️  Creating heritage sites...');
@@ -185,7 +151,6 @@ async function seed() {
         severity: IncidentSeverity.MEDIUM,
         description: 'Minor cracks observed in the north-east minaret foundation',
         status: IncidentStatus.IN_PROGRESS,
-        reportedBy: users[2]._id,
         images: [],
       },
       {
@@ -194,7 +159,6 @@ async function seed() {
         severity: IncidentSeverity.HIGH,
         description: 'Graffiti found on the outer walls near the Lahori Gate',
         status: IncidentStatus.OPEN,
-        reportedBy: users[1]._id,
         images: [],
       },
       {
@@ -203,7 +167,6 @@ async function seed() {
         severity: IncidentSeverity.HIGH,
         description: 'Visitor capacity exceeded during festival period causing safety concerns',
         status: IncidentStatus.OPEN,
-        reportedBy: users[3]._id,
         images: [],
       },
       {
@@ -212,7 +175,6 @@ async function seed() {
         severity: IncidentSeverity.MEDIUM,
         description: 'Water seepage detected in Cave 1 due to monsoon',
         status: IncidentStatus.IN_PROGRESS,
-        reportedBy: users[2]._id,
         images: [],
       },
       {
@@ -221,7 +183,6 @@ async function seed() {
         severity: IncidentSeverity.LOW,
         description: 'Security camera malfunction in the eastern sector',
         status: IncidentStatus.RESOLVED,
-        reportedBy: users[2]._id,
         resolvedAt: new Date('2026-02-10'),
         resolutionNotes: 'Camera replaced and tested successfully',
       },
@@ -231,7 +192,6 @@ async function seed() {
         severity: IncidentSeverity.LOW,
         description: 'Loose stones detected in the temple courtyard path',
         status: IncidentStatus.OPEN,
-        reportedBy: users[2]._id,
         images: [],
       },
     ]);
@@ -251,7 +211,6 @@ async function seed() {
         startDate: new Date('2025-11-01'),
         beforeImages: [],
         afterImages: [],
-        createdBy: users[1]._id,
       },
       {
         siteId: sites[2]._id, // Red Fort
@@ -264,7 +223,6 @@ async function seed() {
         startDate: new Date('2026-03-15'),
         beforeImages: [],
         afterImages: [],
-        createdBy: users[0]._id,
       },
       {
         siteId: sites[4]._id, // Ajanta Caves
@@ -277,7 +235,6 @@ async function seed() {
         startDate: new Date('2025-10-01'),
         beforeImages: [],
         afterImages: [],
-        createdBy: users[0]._id,
       },
       {
         siteId: sites[5]._id, // Hawa Mahal
@@ -292,7 +249,6 @@ async function seed() {
         completionNotes: 'All 953 windows restored successfully',
         beforeImages: [],
         afterImages: [],
-        createdBy: users[1]._id,
       },
     ]);
     console.log(`✅ Created ${conservationProjects.length} conservation projects\n`);
@@ -305,7 +261,6 @@ async function seed() {
         title: 'Taj Mahal Phase 4 Conservation Budget Approval',
         description: 'Requesting budget approval for next phase of marble restoration',
         referenceId: conservationProjects[0]._id,
-        submittedBy: users[1]._id,
         status: ApprovalStatus.PENDING,
         isPriority: true,
       },
@@ -314,7 +269,6 @@ async function seed() {
         title: 'Red Fort Vandalism Response Plan Approval',
         description: 'Approval for emergency response and enhanced security measures',
         referenceId: incidents[1]._id,
-        submittedBy: users[1]._id,
         status: ApprovalStatus.PENDING,
         isPriority: true,
       },
@@ -323,9 +277,7 @@ async function seed() {
         title: 'Charminar Visitor Management System Upgrade',
         description: 'Budget approval for digital ticketing and crowd control system',
         referenceId: sites[3]._id,
-        submittedBy: users[3]._id,
         status: ApprovalStatus.APPROVED,
-        reviewedBy: users[0]._id,
         reviewedAt: new Date('2026-02-08'),
         reviewNotes: 'Approved with full budget allocation',
         isPriority: false,
@@ -335,7 +287,6 @@ async function seed() {
         title: 'Annual Conservation Report 2025-26',
         description: 'Quarterly conservation activities report for submission',
         referenceId: sites[0]._id,
-        submittedBy: users[2]._id,
         status: ApprovalStatus.PENDING,
         isPriority: false,
       },
@@ -376,12 +327,12 @@ async function seed() {
 
     console.log('✨ Database seeding completed successfully!\n');
     console.log('📈 Summary:');
-    console.log(`   - Users: ${users.length}`);
     console.log(`   - Sites: ${sites.length}`);
     console.log(`   - Incidents: ${incidents.length}`);
     console.log(`   - Conservation Projects: ${conservationProjects.length}`);
     console.log(`   - Approvals: ${approvals.length}`);
-    console.log(`   - Footfall Records: ${footfallRecords.length}\n`);
+    console.log(`   - Footfall Records: ${footfallRecords.length}`);
+    console.log('\n   ℹ️  Note: Users are created via Clerk authentication\n');
 
     process.exit(0);
   } catch (error) {

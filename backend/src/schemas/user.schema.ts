@@ -9,13 +9,13 @@ export enum UserRole {
 
 @Schema({ timestamps: true })
 export class User extends Document {
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ required: true, unique: true })
   clerkId: string;
 
   @Prop({ required: true })
   name: string;
 
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ required: true, unique: true })
   email: string;
 
   @Prop({ required: true, enum: UserRole, default: UserRole.SITE_OFFICER })
