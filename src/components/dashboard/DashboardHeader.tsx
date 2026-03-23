@@ -1,96 +1,168 @@
-import React from "react";
-import { Bell, Map, Calendar, ChevronDown } from "lucide-react";
-import { UserButton } from "@clerk/clerk-react";
-
-type DashboardScope = "national" | "state" | "site";
+import React from 'react';
+import { Bell, Map } from 'lucide-react';
+import { UserButton } from '@clerk/clerk-react';
+import type { DashboardScope, SiteSummary } from '../../types/dashboard';
 
 interface DashboardHeaderProps {
-	scope: DashboardScope;
-	onScopeChange: (scope: DashboardScope) => void;
+  scope: DashboardScope;
+  title: string;
+  subtitle: string;
+  dateRangeLabel: string;
+  stateOptions: string[];
+  selectedState: string;
+  siteOptions: SiteSummary[];
+  selectedSiteId: string;
+  criticalCount: number;
+  onScopeChange: (scope: DashboardScope) => void;
+  onStateChange: (state: string) => void;
+  onSiteChange: (siteId: string) => void;
+  onAlertClick: () => void;
 }
 
-const scopeSubtitle: Record<DashboardScope, string> = {
-	national: "National Department of Archaeology",
-	state: "State Heritage Directorate",
-	site: "Site Operations Unit",
-};
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+  scope,
+  title,
+  subtitle,
+  dateRangeLabel,
+  stateOptions,
+  selectedState,
+  siteOptions,
+  selectedSiteId,
+  criticalCount,
+  onScopeChange,
+  onStateChange,
+  onSiteChange,
+  onAlertClick,
+}) => {
+  const renderFilters = () => {
+    if (scope === 'national') {
+      return null;
+    }
 
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({ scope, onScopeChange }) => {
-	return (
-		<header className="bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-			<div className="flex items-center gap-4">
-				<div className="bg-stone-900 text-white p-2 rounded-sm shadow-sm">
-					<Map className="w-5 h-5" />
-				</div>
-				<div>
-					<h1 className="text-xl font-serif text-stone-900 font-semibold tracking-tight">
-						ASI Kolkata Circle
-					</h1>
-					<p className="text-xs text-stone-500 uppercase tracking-widest font-medium">
-						{scopeSubtitle[scope]}
-					</p>
-				</div>
-			</div>
+    return (
+      <div className="flex flex-col gap-2 md:flex-row md:items-center">
+        <select
+          value={selectedState}
+          onChange={(event) => onStateChange(event.target.value)}
+          className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm focus:border-stone-400 focus:outline-none"
+        >
+          {stateOptions.length === 0 ? <option value="">No states available</option> : null}
+          {stateOptions.map((stateOption) => (
+            <option key={stateOption} value={stateOption}>
+              {stateOption}
+            </option>
+          ))}
+        </select>
 
-			<div className="flex items-center gap-4">
-				{/* Scope Selector */}
-				<div className="hidden md:flex items-center text-sm border border-stone-200 rounded-md bg-stone-50 overflow-hidden">
-					<button
-						onClick={() => onScopeChange("national")}
-						className={`px-4 py-1.5 border-r border-stone-200 transition-colors ${
-							scope === "national"
-								? "bg-white shadow-sm font-medium text-stone-900"
-								: "text-stone-500 hover:text-stone-900 hover:bg-stone-100"
-						}`}>
-						National
-					</button>
-					<button
-						onClick={() => onScopeChange("state")}
-						className={`px-4 py-1.5 transition-colors ${
-							scope === "state"
-								? "bg-white shadow-sm font-medium text-stone-900"
-								: "text-stone-500 hover:text-stone-900 hover:bg-stone-100"
-						}`}>
-						State
-					</button>
-					<button
-						onClick={() => onScopeChange("site")}
-						className={`px-4 py-1.5 transition-colors ${
-							scope === "site"
-								? "bg-white shadow-sm font-medium text-stone-900"
-								: "text-stone-500 hover:text-stone-900 hover:bg-stone-100"
-						}`}>
-						Site Level
-					</button>
-				</div>
+        {scope === 'site' ? (
+          <select
+            value={selectedSiteId}
+            onChange={(event) => onSiteChange(event.target.value)}
+            className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm focus:border-stone-400 focus:outline-none"
+            disabled={siteOptions.length === 0}
+          >
+            {siteOptions.length === 0 ? <option value="">No sites available</option> : null}
+            {siteOptions.map((site) => (
+              <option key={site._id} value={site._id}>
+                {site.name}
+              </option>
+            ))}
+          </select>
+        ) : null}
+      </div>
+    );
+  };
 
-				<div className="h-6 w-px bg-stone-200 mx-2 hidden md:block" />
+  return (
+    <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/95 px-6 py-4 backdrop-blur">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="rounded-sm bg-stone-900 p-2 text-white shadow-sm">
+            <Map className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-stone-900">{title}</h1>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-stone-500">{subtitle}</p>
+          </div>
+        </div>
 
-				{/* Date Selector */}
-				<button className="flex items-center gap-2 text-sm font-medium text-stone-600 bg-white border border-stone-200 px-3 py-1.5 rounded-md hover:bg-stone-50 transition-colors shadow-sm">
-					<Calendar className="w-4 h-4 text-stone-400" />
-					<span>Oct 14, 2023 - Nov 14, 2023</span>
-					<ChevronDown className="w-3 h-3 text-stone-400" />
-				</button>
+        <div className="flex flex-col gap-3 xl:items-end">
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={scope}
+              onChange={(event) => onScopeChange(event.target.value as DashboardScope)}
+              className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm focus:border-stone-400 focus:outline-none md:hidden"
+            >
+              <option value="national">National</option>
+              <option value="state">State</option>
+              <option value="site">Site</option>
+            </select>
 
-				{/* Alerts */}
-				<button className="relative p-2 text-stone-500 hover:bg-stone-100 rounded-full transition-colors">
-					<Bell className="w-5 h-5" />
-					<span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-600 rounded-full border border-white"></span>
-				</button>
+            <div className="hidden overflow-hidden rounded-md border border-stone-200 bg-stone-50 md:flex">
+              <button
+                onClick={() => onScopeChange('national')}
+                className={`border-r border-stone-200 px-4 py-2 text-sm transition-colors ${
+                  scope === 'national'
+                    ? 'bg-white font-medium text-stone-900 shadow-sm'
+                    : 'text-stone-500 hover:bg-stone-100 hover:text-stone-900'
+                }`}
+              >
+                National
+              </button>
+              <button
+                onClick={() => onScopeChange('state')}
+                className={`border-r border-stone-200 px-4 py-2 text-sm transition-colors ${
+                  scope === 'state'
+                    ? 'bg-white font-medium text-stone-900 shadow-sm'
+                    : 'text-stone-500 hover:bg-stone-100 hover:text-stone-900'
+                }`}
+              >
+                State
+              </button>
+              <button
+                onClick={() => onScopeChange('site')}
+                className={`px-4 py-2 text-sm transition-colors ${
+                  scope === 'site'
+                    ? 'bg-white font-medium text-stone-900 shadow-sm'
+                    : 'text-stone-500 hover:bg-stone-100 hover:text-stone-900'
+                }`}
+              >
+                Site
+              </button>
+            </div>
 
-				{/* User Profile & Logout */}
-				<UserButton
-					afterSignOutUrl="/"
-					appearance={{
-						elements: {
-							avatarBox: "w-8 h-8",
-						},
-					}}
-				/>
-			</div>
-		</header>
-	);
+            <div className="rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-sm font-medium text-stone-600 shadow-sm">
+              Last 7 Days: {dateRangeLabel}
+            </div>
+
+            <button
+              onClick={onAlertClick}
+              className="relative rounded-full border border-stone-200 p-2 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900"
+              aria-label="Jump to critical alerts"
+            >
+              <Bell className="h-5 w-5" />
+              {criticalCount > 0 ? (
+                <span className="absolute -right-1 -top-1 rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white">
+                  {criticalCount}
+                </span>
+              ) : null}
+            </button>
+
+            <UserButton
+              afterSignOutUrl="/"
+              appearance={{
+                elements: {
+                  avatarBox: 'h-8 w-8',
+                },
+              }}
+            />
+          </div>
+
+          {renderFilters()}
+        </div>
+      </div>
+    </header>
+  );
 };
 
 export default DashboardHeader;

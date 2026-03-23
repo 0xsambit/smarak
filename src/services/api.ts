@@ -1,20 +1,43 @@
 import axios from 'axios';
+import type { DashboardScope } from '../types/dashboard';
+
+type AuthTokenProvider = () => Promise<string | null>;
+
+let authTokenProvider: AuthTokenProvider | null = null;
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
   timeout: 10000,
 });
 
-// Function to set auth token (will be called from components with Clerk token)
+export const setAuthTokenProvider = (provider: AuthTokenProvider | null) => {
+  authTokenProvider = provider;
+};
+
 export const setAuthToken = (token: string | null) => {
   if (token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
   } else {
-    delete api.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common.Authorization;
   }
 };
 
-// Response interceptor for error handling
+api.interceptors.request.use(async (config) => {
+  if (!authTokenProvider) {
+    return config;
+  }
+
+  const token = await authTokenProvider();
+
+  if (!token) {
+    return config;
+  }
+
+  config.headers = config.headers || {};
+  config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -25,21 +48,16 @@ api.interceptors.response.use(
       console.error('Forbidden - insufficient permissions');
     }
     return Promise.reject(error);
-  }
+  },
 );
 
-// API endpoints
 export const dashboardAPI = {
-  getOverview: (scope: string, state?: string, siteId?: string) => {
-    const params: any = { scope };
-    if (state) params.state = state;
-    if (siteId) params.siteId = siteId;
-    return api.get('/dashboard/overview', { params });
-  },
+  getOverview: (params: { scope: DashboardScope; state?: string; siteId?: string }) =>
+    api.get('/dashboard/overview', { params }),
 };
 
 export const sitesAPI = {
-  getAll: (params?: any) => api.get('/sites', { params }),
+  getAll: (params?: Record<string, unknown>) => api.get('/sites', { params }),
   getById: (id: string) => api.get(`/sites/${id}`),
   getNearby: (latitude: number, longitude: number, maxDistance?: number) =>
     api.get('/sites/nearby', { params: { latitude, longitude, maxDistance } }),
@@ -47,26 +65,26 @@ export const sitesAPI = {
 };
 
 export const incidentsAPI = {
-  getAll: (params?: any) => api.get('/incidents', { params }),
+  getAll: (params?: Record<string, unknown>) => api.get('/incidents', { params }),
   getById: (id: string) => api.get(`/incidents/${id}`),
-  create: (data: any) => api.post('/incidents', data),
-  update: (id: string, data: any) => api.patch(`/incidents/${id}`, data),
+  create: (data: Record<string, unknown>) => api.post('/incidents', data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/incidents/${id}`, data),
 };
 
 export const conservationAPI = {
-  getAll: (params?: any) => api.get('/conservation', { params }),
+  getAll: (params?: Record<string, unknown>) => api.get('/conservation', { params }),
   getById: (id: string) => api.get(`/conservation/${id}`),
 };
 
 export const approvalsAPI = {
-  getAll: (params?: any) => api.get('/approvals', { params }),
+  getAll: (params?: Record<string, unknown>) => api.get('/approvals', { params }),
   getById: (id: string) => api.get(`/approvals/${id}`),
-  review: (id: string, data: any) => api.patch(`/approvals/${id}/review`, data),
+  review: (id: string, data: Record<string, unknown>) => api.patch(`/approvals/${id}/review`, data),
 };
 
 export const usersAPI = {
   getMe: () => api.get('/users/me'),
-  getAll: (params?: any) => api.get('/users', { params }),
+  getAll: (params?: Record<string, unknown>) => api.get('/users', { params }),
 };
 
 export default api;

@@ -20,24 +20,55 @@ import { Footfall, FootfallSchema } from '../schemas/footfall.schema';
 dotenv.config();
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/heritage-db';
+const BOOTSTRAP_ADMIN = {
+  clerkId: process.env.BOOTSTRAP_ADMIN_CLERK_ID,
+  email: process.env.BOOTSTRAP_ADMIN_EMAIL?.toLowerCase(),
+  name: process.env.BOOTSTRAP_ADMIN_NAME || 'Bootstrap Admin',
+};
+
+const daysAgo = (days: number, hours = 10) => {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  date.setHours(hours, 0, 0, 0);
+  return date;
+};
 
 async function seed() {
   try {
-    console.log('🌱 Starting database seeding...\n');
+    if (!BOOTSTRAP_ADMIN.clerkId || !BOOTSTRAP_ADMIN.email) {
+      throw new Error('BOOTSTRAP_ADMIN_CLERK_ID and BOOTSTRAP_ADMIN_EMAIL must be set before seeding.');
+    }
 
-    // Connect to MongoDB
+    console.log('Starting Atlas seed...\n');
+
     await connect(MONGODB_URI);
-    console.log('✅ Connected to MongoDB\n');
+    console.log('Connected to MongoDB\n');
 
-    // Create models
-    const UserModel = connection.model('User', UserSchema);
-    const SiteModel = connection.model('Site', SiteSchema);
-    const IncidentModel = connection.model('Incident', IncidentSchema);
-    const ConservationModel = connection.model('Conservation', ConservationSchema);
-    const ApprovalModel = connection.model('Approval', ApprovalSchema);
-    const FootfallModel = connection.model('Footfall', FootfallSchema);
+    const UserModel = connection.model<User>('User', UserSchema);
+    const SiteModel = connection.model<Site>('Site', SiteSchema);
+    const IncidentModel = connection.model<Incident>('Incident', IncidentSchema);
+    const ConservationModel = connection.model<Conservation>('Conservation', ConservationSchema);
+    const ApprovalModel = connection.model<Approval>('Approval', ApprovalSchema);
+    const FootfallModel = connection.model<Footfall>('Footfall', FootfallSchema);
 
-    // Clear existing data (excluding users - they're managed by Clerk)
+    const bootstrapUser = await UserModel.findOneAndUpdate(
+      { clerkId: BOOTSTRAP_ADMIN.clerkId },
+      {
+        clerkId: BOOTSTRAP_ADMIN.clerkId,
+        email: BOOTSTRAP_ADMIN.email,
+        name: BOOTSTRAP_ADMIN.name,
+        role: UserRole.NATIONAL_ADMIN,
+        isActive: true,
+      },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+      },
+    ).exec();
+
+    console.log(`Bootstrap admin ready: ${bootstrapUser.email}\n`);
+
     await Promise.all([
       SiteModel.deleteMany({}),
       IncidentModel.deleteMany({}),
@@ -45,11 +76,9 @@ async function seed() {
       ApprovalModel.deleteMany({}),
       FootfallModel.deleteMany({}),
     ]);
-    console.log('🗑️  Cleared existing data\n');
-    console.log('ℹ️  Note: Users are created via Clerk authentication, not seeded\n');
+    console.log('Cleared existing business data\n');
 
-    // Create heritage sites
-    console.log('🏛️  Creating heritage sites...');
+    console.log('Creating heritage sites...');
     const sites = await SiteModel.insertMany([
       {
         name: 'Taj Mahal',
@@ -58,9 +87,9 @@ async function seed() {
         coordinates: { type: 'Point', coordinates: [78.0421, 27.1751] },
         protectionStatus: ProtectionStatus.PROTECTED,
         riskLevel: RiskLevel.MEDIUM,
-        lastInspectionDate: new Date('2026-01-15'),
+        lastInspectionDate: daysAgo(18),
         visitorCapacity: 40000,
-        description: 'Iconic white marble mausoleum on the south bank of the Yamuna river',
+        description: 'Iconic white marble mausoleum on the south bank of the Yamuna river.',
       },
       {
         name: 'Qutub Minar',
@@ -69,20 +98,20 @@ async function seed() {
         coordinates: { type: 'Point', coordinates: [77.1855, 28.5245] },
         protectionStatus: ProtectionStatus.PROTECTED,
         riskLevel: RiskLevel.LOW,
-        lastInspectionDate: new Date('2026-02-01'),
+        lastInspectionDate: daysAgo(11),
         visitorCapacity: 15000,
-        description: 'Tallest brick minaret in the world',
+        description: 'Tallest brick minaret in the world.',
       },
       {
         name: 'Red Fort',
         state: 'Delhi',
         district: 'Central Delhi',
-        coordinates: { type: 'Point', coordinates: [77.2410, 28.6562] },
+        coordinates: { type: 'Point', coordinates: [77.241, 28.6562] },
         protectionStatus: ProtectionStatus.PROTECTED,
         riskLevel: RiskLevel.HIGH,
-        lastInspectionDate: new Date('2025-12-20'),
+        lastInspectionDate: daysAgo(29),
         visitorCapacity: 25000,
-        description: 'Historic fortified palace complex',
+        description: 'Historic fortified palace complex in Old Delhi.',
       },
       {
         name: 'Charminar',
@@ -91,9 +120,9 @@ async function seed() {
         coordinates: { type: 'Point', coordinates: [78.4747, 17.3616] },
         protectionStatus: ProtectionStatus.RESTRICTED,
         riskLevel: RiskLevel.HIGH,
-        lastInspectionDate: new Date('2026-01-10'),
+        lastInspectionDate: daysAgo(14),
         visitorCapacity: 10000,
-        description: 'Monument and mosque in Hyderabad',
+        description: 'Monument and mosque in Hyderabad.',
       },
       {
         name: 'Ajanta Caves',
@@ -102,9 +131,9 @@ async function seed() {
         coordinates: { type: 'Point', coordinates: [75.7033, 20.5519] },
         protectionStatus: ProtectionStatus.PROTECTED,
         riskLevel: RiskLevel.MEDIUM,
-        lastInspectionDate: new Date('2026-01-25'),
+        lastInspectionDate: daysAgo(17),
         visitorCapacity: 5000,
-        description: 'Rock-cut Buddhist cave monuments',
+        description: 'Rock-cut Buddhist cave monuments dating from the second century BCE.',
       },
       {
         name: 'Hawa Mahal',
@@ -113,9 +142,9 @@ async function seed() {
         coordinates: { type: 'Point', coordinates: [75.8267, 26.9239] },
         protectionStatus: ProtectionStatus.OPEN,
         riskLevel: RiskLevel.LOW,
-        lastInspectionDate: new Date('2026-02-05'),
+        lastInspectionDate: daysAgo(9),
         visitorCapacity: 8000,
-        description: 'Palace of Winds with unique honeycomb structure',
+        description: 'Palace of Winds with a distinctive honeycomb facade.',
       },
       {
         name: 'Konark Sun Temple',
@@ -124,219 +153,254 @@ async function seed() {
         coordinates: { type: 'Point', coordinates: [86.0945, 19.8876] },
         protectionStatus: ProtectionStatus.PROTECTED,
         riskLevel: RiskLevel.MEDIUM,
-        lastInspectionDate: new Date('2026-01-20'),
+        lastInspectionDate: daysAgo(16),
         visitorCapacity: 12000,
-        description: '13th-century Sun Temple',
+        description: '13th-century Sun Temple dedicated to Surya.',
       },
       {
         name: 'Hampi',
         state: 'Karnataka',
         district: 'Ballari',
-        coordinates: { type: 'Point', coordinates: [76.4629, 15.3350] },
+        coordinates: { type: 'Point', coordinates: [76.4629, 15.335] },
         protectionStatus: ProtectionStatus.PROTECTED,
         riskLevel: RiskLevel.LOW,
-        lastInspectionDate: new Date('2026-02-08'),
+        lastInspectionDate: daysAgo(8),
         visitorCapacity: 6000,
-        description: 'Ancient Vijayanagara Empire ruins',
+        description: 'Ancient Vijayanagara Empire ruins spread across a vast landscape.',
       },
     ]);
-    console.log(`✅ Created ${sites.length} heritage sites\n`);
+    console.log(`Created ${sites.length} sites\n`);
 
-    // Create incidents
-    console.log('⚠️  Creating incidents...');
+    console.log('Creating incidents...');
     const incidents = await IncidentModel.insertMany([
       {
-        siteId: sites[0]._id, // Taj Mahal
+        siteId: sites[0]._id,
         type: IncidentType.STRUCTURAL,
         severity: IncidentSeverity.MEDIUM,
-        description: 'Minor cracks observed in the north-east minaret foundation',
+        description: 'Minor cracks observed in the north-east minaret foundation.',
         status: IncidentStatus.IN_PROGRESS,
         images: [],
+        reportedBy: bootstrapUser._id,
+        createdAt: daysAgo(4),
+        updatedAt: daysAgo(2),
       },
       {
-        siteId: sites[2]._id, // Red Fort
+        siteId: sites[2]._id,
         type: IncidentType.VANDALISM,
         severity: IncidentSeverity.HIGH,
-        description: 'Graffiti found on the outer walls near the Lahori Gate',
+        description: 'Graffiti found on the outer walls near the Lahori Gate.',
         status: IncidentStatus.OPEN,
         images: [],
+        reportedBy: bootstrapUser._id,
+        createdAt: daysAgo(5),
+        updatedAt: daysAgo(5),
       },
       {
-        siteId: sites[3]._id, // Charminar
+        siteId: sites[3]._id,
         type: IncidentType.OVERCROWDING,
         severity: IncidentSeverity.HIGH,
-        description: 'Visitor capacity exceeded during festival period causing safety concerns',
+        description: 'Visitor capacity exceeded during a festival period, causing safety concerns.',
         status: IncidentStatus.OPEN,
         images: [],
+        reportedBy: bootstrapUser._id,
+        createdAt: daysAgo(2),
+        updatedAt: daysAgo(2),
       },
       {
-        siteId: sites[4]._id, // Ajanta Caves
+        siteId: sites[4]._id,
         type: IncidentType.ENVIRONMENTAL,
         severity: IncidentSeverity.MEDIUM,
-        description: 'Water seepage detected in Cave 1 due to monsoon',
+        description: 'Water seepage detected in Cave 1 due to monsoon moisture.',
         status: IncidentStatus.IN_PROGRESS,
         images: [],
+        reportedBy: bootstrapUser._id,
+        createdAt: daysAgo(3),
+        updatedAt: daysAgo(1),
       },
       {
-        siteId: sites[1]._id, // Qutub Minar
+        siteId: sites[1]._id,
         type: IncidentType.SECURITY,
         severity: IncidentSeverity.LOW,
-        description: 'Security camera malfunction in the eastern sector',
+        description: 'Security camera malfunction in the eastern sector.',
         status: IncidentStatus.RESOLVED,
-        resolvedAt: new Date('2026-02-10'),
-        resolutionNotes: 'Camera replaced and tested successfully',
+        resolvedAt: daysAgo(1),
+        resolutionNotes: 'Camera replaced and tested successfully.',
+        reportedBy: bootstrapUser._id,
+        createdAt: daysAgo(7),
+        updatedAt: daysAgo(1),
       },
       {
-        siteId: sites[6]._id, // Konark
+        siteId: sites[6]._id,
         type: IncidentType.STRUCTURAL,
-        severity: IncidentSeverity.LOW,
-        description: 'Loose stones detected in the temple courtyard path',
+        severity: IncidentSeverity.HIGH,
+        description: 'Loose stones detected near the temple courtyard path.',
         status: IncidentStatus.OPEN,
         images: [],
+        reportedBy: bootstrapUser._id,
+        createdAt: daysAgo(1),
+        updatedAt: daysAgo(1),
       },
     ]);
-    console.log(`✅ Created ${incidents.length} incidents\n`);
+    console.log(`Created ${incidents.length} incidents\n`);
 
-    // Create conservation projects
-    console.log('🔧 Creating conservation projects...');
+    console.log('Creating conservation projects...');
     const conservationProjects = await ConservationModel.insertMany([
       {
-        siteId: sites[0]._id, // Taj Mahal
+        siteId: sites[0]._id,
         issueType: 'Marble Restoration',
         title: 'Taj Mahal Marble Cleaning and Restoration Phase 3',
-        description: 'Comprehensive marble surface cleaning and restoration of yellowing patches',
+        description: 'Comprehensive marble surface cleaning and restoration of yellowing patches.',
         contractor: 'ASI Heritage Conservation Division',
         budget: 15000000,
         status: ConservationStatus.ONGOING,
-        startDate: new Date('2025-11-01'),
+        startDate: daysAgo(120),
         beforeImages: [],
         afterImages: [],
+        createdBy: bootstrapUser._id,
+        createdAt: daysAgo(30),
+        updatedAt: daysAgo(2),
       },
       {
-        siteId: sites[2]._id, // Red Fort
+        siteId: sites[2]._id,
         issueType: 'Wall Restoration',
         title: 'Red Fort Eastern Wall Structural Reinforcement',
-        description: 'Reinforcement and restoration of deteriorating sections of the eastern wall',
+        description: 'Reinforcement and restoration of deteriorating sections of the eastern wall.',
         contractor: 'Delhi Archaeological Conservation Ltd',
         budget: 8500000,
         status: ConservationStatus.PLANNED,
-        startDate: new Date('2026-03-15'),
+        startDate: daysAgo(-7),
         beforeImages: [],
         afterImages: [],
+        createdBy: bootstrapUser._id,
+        createdAt: daysAgo(9),
+        updatedAt: daysAgo(4),
       },
       {
-        siteId: sites[4]._id, // Ajanta Caves
+        siteId: sites[4]._id,
         issueType: 'Painting Preservation',
         title: 'Ajanta Cave Murals Digital Documentation and Preservation',
-        description: 'High-resolution digital documentation and environmental control implementation',
+        description: 'High-resolution digital documentation and environmental control implementation.',
         contractor: 'National Museum Conservation Lab',
         budget: 12000000,
         status: ConservationStatus.ONGOING,
-        startDate: new Date('2025-10-01'),
+        startDate: daysAgo(140),
         beforeImages: [],
         afterImages: [],
+        createdBy: bootstrapUser._id,
+        createdAt: daysAgo(24),
+        updatedAt: daysAgo(3),
       },
       {
-        siteId: sites[5]._id, // Hawa Mahal
+        siteId: sites[5]._id,
         issueType: 'Window Restoration',
-        title: 'Hawa Mahal Jharokha (Window) Restoration',
-        description: 'Restoration of damaged sandstone jharokhas on the facade',
+        title: 'Hawa Mahal Jharokha Restoration',
+        description: 'Restoration of damaged sandstone jharokhas on the facade.',
         contractor: 'Rajasthan Heritage Trust',
         budget: 4500000,
         status: ConservationStatus.COMPLETED,
-        startDate: new Date('2025-08-01'),
-        endDate: new Date('2026-01-31'),
-        completionNotes: 'All 953 windows restored successfully',
+        startDate: daysAgo(200),
+        endDate: daysAgo(20),
+        completionNotes: 'All windows restored successfully.',
         beforeImages: [],
         afterImages: [],
+        createdBy: bootstrapUser._id,
+        createdAt: daysAgo(60),
+        updatedAt: daysAgo(20),
       },
     ]);
-    console.log(`✅ Created ${conservationProjects.length} conservation projects\n`);
+    console.log(`Created ${conservationProjects.length} conservation projects\n`);
 
-    // Create approvals
-    console.log('📋 Creating approval requests...');
+    console.log('Creating approvals...');
     const approvals = await ApprovalModel.insertMany([
       {
         type: ApprovalType.CONSERVATION,
         title: 'Taj Mahal Phase 4 Conservation Budget Approval',
-        description: 'Requesting budget approval for next phase of marble restoration',
+        description: 'Requesting budget approval for the next marble restoration phase.',
         referenceId: conservationProjects[0]._id,
+        submittedBy: bootstrapUser._id,
         status: ApprovalStatus.PENDING,
         isPriority: true,
+        createdAt: daysAgo(3),
+        updatedAt: daysAgo(3),
       },
       {
         type: ApprovalType.INCIDENT,
         title: 'Red Fort Vandalism Response Plan Approval',
-        description: 'Approval for emergency response and enhanced security measures',
+        description: 'Approval for emergency response and enhanced security measures.',
         referenceId: incidents[1]._id,
+        submittedBy: bootstrapUser._id,
         status: ApprovalStatus.PENDING,
         isPriority: true,
+        createdAt: daysAgo(2),
+        updatedAt: daysAgo(2),
       },
       {
         type: ApprovalType.BUDGET,
         title: 'Charminar Visitor Management System Upgrade',
-        description: 'Budget approval for digital ticketing and crowd control system',
+        description: 'Budget approval for digital ticketing and crowd control improvements.',
         referenceId: sites[3]._id,
+        submittedBy: bootstrapUser._id,
         status: ApprovalStatus.APPROVED,
-        reviewedAt: new Date('2026-02-08'),
-        reviewNotes: 'Approved with full budget allocation',
+        reviewedBy: bootstrapUser._id,
+        reviewedAt: daysAgo(6),
+        reviewNotes: 'Approved with full budget allocation.',
         isPriority: false,
+        createdAt: daysAgo(8),
+        updatedAt: daysAgo(6),
       },
       {
         type: ApprovalType.REPORT,
         title: 'Annual Conservation Report 2025-26',
-        description: 'Quarterly conservation activities report for submission',
+        description: 'Quarterly conservation activities report for submission.',
         referenceId: sites[0]._id,
+        submittedBy: bootstrapUser._id,
         status: ApprovalStatus.PENDING,
         isPriority: false,
+        createdAt: daysAgo(1),
+        updatedAt: daysAgo(1),
       },
     ]);
-    console.log(`✅ Created ${approvals.length} approval requests\n`);
+    console.log(`Created ${approvals.length} approvals\n`);
 
-    // Create footfall data for last 30 days
-    console.log('📊 Creating footfall data...');
+    console.log('Creating footfall data...');
     const footfallRecords: any[] = [];
     const today = new Date();
 
-    for (let i = 0; i < 30; i++) {
+    for (let dayOffset = 0; dayOffset < 30; dayOffset += 1) {
       const date = new Date(today);
-      date.setDate(date.getDate() - i);
+      date.setDate(date.getDate() - dayOffset);
+      date.setHours(0, 0, 0, 0);
 
-      // Generate footfall for each site with realistic patterns
       sites.forEach((site, index) => {
         const baseVisitors = Math.floor(site.visitorCapacity * 0.3);
         const variance = Math.floor(baseVisitors * 0.3);
-        const randomVisitors = baseVisitors + Math.floor(Math.random() * variance);
-
-        // Weekend boost
+        const randomVisitors = baseVisitors + Math.floor(Math.random() * Math.max(variance, 1));
         const isWeekend = date.getDay() === 0 || date.getDay() === 6;
         const visitors = isWeekend ? Math.floor(randomVisitors * 1.4) : randomVisitors;
 
         footfallRecords.push({
           siteId: site._id,
-          date: date,
-          visitors: visitors,
-          revenue: visitors * (100 + index * 20), // Varying ticket prices
+          date,
+          visitors,
+          revenue: visitors * (100 + index * 20),
           peakHour: isWeekend ? '11:00 AM' : '2:00 PM',
         });
       });
     }
 
     await FootfallModel.insertMany(footfallRecords);
-    console.log(`✅ Created ${footfallRecords.length} footfall records\n`);
+    console.log(`Created ${footfallRecords.length} footfall records\n`);
 
-    console.log('✨ Database seeding completed successfully!\n');
-    console.log('📈 Summary:');
-    console.log(`   - Sites: ${sites.length}`);
-    console.log(`   - Incidents: ${incidents.length}`);
-    console.log(`   - Conservation Projects: ${conservationProjects.length}`);
-    console.log(`   - Approvals: ${approvals.length}`);
-    console.log(`   - Footfall Records: ${footfallRecords.length}`);
-    console.log('\n   ℹ️  Note: Users are created via Clerk authentication\n');
+    console.log('Seed complete.');
+    console.log(`Sites: ${sites.length}`);
+    console.log(`Incidents: ${incidents.length}`);
+    console.log(`Conservation projects: ${conservationProjects.length}`);
+    console.log(`Approvals: ${approvals.length}`);
+    console.log(`Footfall records: ${footfallRecords.length}`);
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error seeding database:', error);
+    console.error('Seed failed:', error);
     process.exit(1);
   }
 }

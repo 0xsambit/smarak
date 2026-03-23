@@ -17,12 +17,64 @@ import { ConservationModule } from './modules/conservation/conservation.module';
 import { ApprovalsModule } from './modules/approvals/approvals.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 
+const requireEnv = (env: NodeJS.ProcessEnv, key: string) => {
+  const value = env[key]?.trim();
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
+};
+
+const validateNumber = (value: string | undefined, fallback: number, key: string) => {
+  const raw = value ?? String(fallback);
+  const parsed = Number.parseInt(raw, 10);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    throw new Error(`${key} must be a positive integer. Received: ${raw}`);
+  }
+  return parsed;
+};
+
+const validateEnvironment = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv => {
+  requireEnv(env, 'MONGODB_URI');
+  requireEnv(env, 'CLERK_SECRET_KEY');
+
+  const nodeEnv = env.NODE_ENV ?? 'development';
+  if (nodeEnv === 'production') {
+    requireEnv(env, 'CLERK_WEBHOOK_SECRET');
+  }
+
+  validateNumber(env.PORT, 8080, 'PORT');
+  validateNumber(env.RATE_LIMIT_TTL, 900000, 'RATE_LIMIT_TTL');
+  validateNumber(env.RATE_LIMIT_MAX, 100, 'RATE_LIMIT_MAX');
+
+  const corsOrigin = (env.CORS_ORIGIN ?? 'http://localhost:5173').trim();
+  if (!corsOrigin) {
+    throw new Error('CORS_ORIGIN must not be empty');
+  }
+
+  const origins = corsOrigin.split(',').map((origin) => origin.trim()).filter(Boolean);
+  if (origins.length === 0) {
+    throw new Error('CORS_ORIGIN must contain at least one origin');
+  }
+
+  for (const origin of origins) {
+    try {
+      new URL(origin);
+    } catch {
+      throw new Error(`CORS_ORIGIN contains an invalid URL: ${origin}`);
+    }
+  }
+
+  return env;
+};
+
 @Module({
   imports: [
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
       load: [databaseConfig, clerkConfig, appConfig],
+      validate: validateEnvironment,
     }),
 
     // Database connection

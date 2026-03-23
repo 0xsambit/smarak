@@ -15,9 +15,9 @@ async function bootstrap() {
   app.use(helmet());
 
   // CORS configuration
-  const corsOrigin = configService.get<string>('app.corsOrigin');
+  const corsOrigins = configService.get<string[]>('app.corsOrigins') || ['http://localhost:5173'];
   app.enableCors({
-    origin: corsOrigin,
+    origin: corsOrigins,
     credentials: true,
   });
 
@@ -78,7 +78,7 @@ async function bootstrap() {
   console.log(`\n🚀 Heritage Site Management Backend`);
   console.log(`📝 API running on: http://localhost:${port}/api`);
   console.log(`📚 Swagger docs: http://localhost:${port}/docs`);
-  console.log(`🔒 CORS enabled for: ${corsOrigin}`);
+  console.log(`🔒 CORS enabled for: ${corsOrigins.join(', ')}`);
   console.log(`🌍 Environment: ${configService.get<string>('app.nodeEnv')}\n`);
 }
 
