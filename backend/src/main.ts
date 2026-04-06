@@ -60,6 +60,7 @@ async function bootstrap() {
     .addTag('incidents', 'Incident tracking and reporting')
     .addTag('conservation', 'Conservation project management')
     .addTag('approvals', 'Approval workflow system')
+    .addTag('uploads', 'GridFS image upload and retrieval')
     .addTag('dashboard', 'Dashboard analytics and KPIs')
     .build();
 

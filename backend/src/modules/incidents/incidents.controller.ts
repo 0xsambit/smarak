@@ -58,9 +58,17 @@ export class IncidentsController {
 
   @Delete(':id')
   @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN)
-  @ApiOperation({ summary: 'Delete incident' })
-  @ApiResponse({ status: 200, description: 'Incident deleted successfully' })
-  remove(@Param('id') id: string) {
-    return this.incidentsService.remove(id);
+  @ApiOperation({ summary: 'Archive incident' })
+  @ApiResponse({ status: 200, description: 'Incident archived successfully' })
+  remove(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.incidentsService.remove(id, user._id || user.id);
+  }
+
+  @Patch(':id/restore')
+  @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN)
+  @ApiOperation({ summary: 'Restore archived incident' })
+  @ApiResponse({ status: 200, description: 'Incident restored successfully' })
+  restore(@Param('id') id: string) {
+    return this.incidentsService.restore(id);
   }
 }

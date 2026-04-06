@@ -76,8 +76,10 @@ export class DashboardService {
     state?: string,
     siteId?: string,
   ): Record<string, unknown> | null {
+    const baseFilter: Record<string, unknown> = { isDeleted: { $ne: true } };
+
     if (scope === DashboardScope.STATE) {
-      return state ? { state } : null;
+      return state ? { ...baseFilter, state } : null;
     }
 
     if (scope === DashboardScope.SITE) {
@@ -85,10 +87,10 @@ export class DashboardService {
         return null;
       }
 
-      return { _id: new Types.ObjectId(siteId) };
+      return { ...baseFilter, _id: new Types.ObjectId(siteId) };
     }
 
-    return {};
+    return baseFilter;
   }
 
   private buildEmptyOverview() {
@@ -127,7 +129,7 @@ export class DashboardService {
         },
       ]),
       this.incidentModel.aggregate([
-        { $match: { siteId: { $in: siteIds } } },
+        { $match: { siteId: { $in: siteIds }, isDeleted: { $ne: true } } },
         {
           $facet: {
             active: [
@@ -138,7 +140,7 @@ export class DashboardService {
         },
       ]),
       this.conservationModel.aggregate([
-        { $match: { siteId: { $in: siteIds } } },
+        { $match: { siteId: { $in: siteIds }, isDeleted: { $ne: true } } },
         {
           $facet: {
             ongoing: [
@@ -164,6 +166,7 @@ export class DashboardService {
       {
         $match: {
           siteId: { $in: siteIds },
+          isDeleted: { $ne: true },
           status: { $ne: IncidentStatus.RESOLVED },
         },
       },
@@ -223,6 +226,7 @@ export class DashboardService {
     const alerts = await this.incidentModel
       .find({
         siteId: { $in: siteIds },
+        isDeleted: { $ne: true },
         severity: IncidentSeverity.HIGH,
         status: { $ne: IncidentStatus.RESOLVED },
       })
@@ -246,7 +250,7 @@ export class DashboardService {
   private async getResolvedApprovals(siteIds: any[]) {
     const siteIdSet = new Set(siteIds.map((siteId) => siteId.toString()));
     const approvals = await this.approvalModel
-      .find({})
+      .find({ isDeleted: { $ne: true } })
       .populate('submittedBy', 'name email')
       .populate('reviewedBy', 'name email')
       .sort({ isPriority: -1, createdAt: -1 })
@@ -272,13 +276,25 @@ export class DashboardService {
 
     const [incidentRefs, conservationRefs, siteRefs] = await Promise.all([
       incidentReferenceIds.length
-        ? this.incidentModel.find({ _id: { $in: incidentReferenceIds } }).populate('siteId', 'name').lean().exec()
+        ? this.incidentModel
+            .find({ _id: { $in: incidentReferenceIds }, isDeleted: { $ne: true } })
+            .populate('siteId', 'name')
+            .lean()
+            .exec()
         : Promise.resolve([]),
       conservationReferenceIds.length
-        ? this.conservationModel.find({ _id: { $in: conservationReferenceIds } }).populate('siteId', 'name').lean().exec()
+        ? this.conservationModel
+            .find({ _id: { $in: conservationReferenceIds }, isDeleted: { $ne: true } })
+            .populate('siteId', 'name')
+            .lean()
+            .exec()
         : Promise.resolve([]),
       siteReferenceIds.length
-        ? this.siteModel.find({ _id: { $in: siteReferenceIds } }).select('name').lean().exec()
+        ? this.siteModel
+            .find({ _id: { $in: siteReferenceIds }, isDeleted: { $ne: true } })
+            .select('name')
+            .lean()
+            .exec()
         : Promise.resolve([]),
     ]);
 
@@ -393,7 +409,7 @@ export class DashboardService {
   private async getRecentActivity(siteIds: any[], approvals: any[]) {
     const [recentIncidents, recentConservation] = await Promise.all([
       this.incidentModel
-        .find({ siteId: { $in: siteIds } })
+        .find({ siteId: { $in: siteIds }, isDeleted: { $ne: true } })
         .populate('siteId', 'name')
         .populate('reportedBy', 'name')
         .sort({ createdAt: -1 })
@@ -401,7 +417,7 @@ export class DashboardService {
         .lean()
         .exec(),
       this.conservationModel
-        .find({ siteId: { $in: siteIds } })
+        .find({ siteId: { $in: siteIds }, isDeleted: { $ne: true } })
         .populate('siteId', 'name')
         .populate('createdBy', 'name')
         .sort({ updatedAt: -1 })
@@ -455,7 +471,10 @@ export class DashboardService {
       return [];
     }
 
-    const matchStage = scope === DashboardScope.STATE && state ? { state } : {};
+    const matchStage: Record<string, unknown> = {
+      isDeleted: { $ne: true },
+      ...(scope === DashboardScope.STATE && state ? { state } : {}),
+    };
 
     return this.siteModel.aggregate([
       { $match: matchStage },
@@ -477,7 +496,12 @@ export class DashboardService {
                 $filter: {
                   input: '$incidents',
                   as: 'incident',
-                  cond: { $ne: ['$$incident.status', IncidentStatus.RESOLVED] },
+                  cond: {
+                    $and: [
+                      { $ne: ['$$incident.status', IncidentStatus.RESOLVED] },
+                      { $ne: ['$$incident.isDeleted', true] },
+                    ],
+                  },
                 },
               },
             },

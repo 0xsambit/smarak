@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export enum ProtectionStatus {
   PROTECTED = 'PROTECTED',
@@ -58,6 +58,15 @@ export class Site extends Document {
   @Prop()
   description?: string;
 
+  @Prop({ default: false, index: true })
+  isDeleted: boolean;
+
+  @Prop()
+  deletedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  deletedBy?: Types.ObjectId;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,6 +78,7 @@ SiteSchema.index({ coordinates: '2dsphere' });
 SiteSchema.index({ state: 1 });
 SiteSchema.index({ riskLevel: 1 });
 SiteSchema.index({ protectionStatus: 1 });
+SiteSchema.index({ isDeleted: 1, state: 1 });
 
 // Virtual field for days since last inspection
 SiteSchema.virtual('daysSinceInspection').get(function () {

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import ActionQueue from "../components/dashboard/ActionQueue";
 import ActivityTimeline from "../components/dashboard/ActivityTimeline";
@@ -309,7 +310,25 @@ const Dashboard: React.FC = () => {
 				}}
 			/>
 
-			<main className="mx-auto max-w-[1600px] space-y-6 p-6">
+			<main className="mx-auto max-w-400 space-y-6 p-6">
+				<section className="rounded-lg border border-stone-200 bg-white p-4">
+					<div className="flex flex-wrap items-center justify-between gap-3">
+						<div>
+							<h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-stone-500">
+								Operations Portal
+							</h2>
+							<p className="text-sm text-stone-600">
+								Manage operational entities with full CRUD workflows.
+							</p>
+						</div>
+						<Link
+							to="/sites"
+							className="rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700">
+							Open Sites Management
+						</Link>
+					</div>
+				</section>
+
 				{error ? (
 					<div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
 						{error}
@@ -352,7 +371,7 @@ const Dashboard: React.FC = () => {
 								footfallTrend={dashboardData.footfallTrend}
 							/>
 						</div>
-						<div className="min-h-[20rem] flex-1">
+						<div className="min-h-80 flex-1">
 							<ActivityTimeline
 								scope={scope}
 								recentActivity={dashboardData.recentActivity}

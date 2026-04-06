@@ -59,9 +59,17 @@ export class ConservationController {
 
   @Delete(':id')
   @Roles(UserRole.NATIONAL_ADMIN)
-  @ApiOperation({ summary: 'Delete conservation project' })
-  @ApiResponse({ status: 200, description: 'Conservation project deleted successfully' })
-  remove(@Param('id') id: string) {
-    return this.conservationService.remove(id);
+  @ApiOperation({ summary: 'Archive conservation project' })
+  @ApiResponse({ status: 200, description: 'Conservation project archived successfully' })
+  remove(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.conservationService.remove(id, user._id || user.id);
+  }
+
+  @Patch(':id/restore')
+  @Roles(UserRole.NATIONAL_ADMIN)
+  @ApiOperation({ summary: 'Restore archived conservation project' })
+  @ApiResponse({ status: 200, description: 'Conservation project restored successfully' })
+  restore(@Param('id') id: string) {
+    return this.conservationService.restore(id);
   }
 }

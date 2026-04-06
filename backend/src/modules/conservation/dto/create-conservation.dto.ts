@@ -25,6 +25,12 @@ export class CreateConservationDto {
   @IsString({ each: true })
   beforeImages?: string[];
 
+  @ApiPropertyOptional({ type: [String], description: 'GridFS file ids for before images' })
+  @IsOptional()
+  @IsArray()
+  @IsMongoId({ each: true })
+  beforeImageFileIds?: string[];
+
   @ApiProperty({ example: 'ASI Heritage Conservation Pvt Ltd' })
   @IsString()
   contractor: string;

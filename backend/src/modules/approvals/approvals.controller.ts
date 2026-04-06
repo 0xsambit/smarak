@@ -12,6 +12,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ApprovalsService } from './approvals.service';
 import { CreateApprovalDto } from './dto/create-approval.dto';
+import { UpdateApprovalDto } from './dto/update-approval.dto';
 import { ReviewApprovalDto } from './dto/review-approval.dto';
 import { QueryApprovalsDto } from './dto/query-approvals.dto';
 import { ClerkAuthGuard } from '@common/guards/clerk-auth.guard';
@@ -48,6 +49,20 @@ export class ApprovalsController {
     return this.approvalsService.findOne(id);
   }
 
+  @Patch(':id')
+  @ApiOperation({ summary: 'Edit pending approval request' })
+  @ApiResponse({ status: 200, description: 'Approval updated successfully' })
+  update(
+    @Param('id') id: string,
+    @Body() updateApprovalDto: UpdateApprovalDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.approvalsService.update(id, updateApprovalDto, {
+      id: user._id || user.id,
+      role: user.role,
+    });
+  }
+
   @Patch(':id/review')
   @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN)
   @ApiOperation({ summary: 'Approve or reject approval request' })
@@ -62,9 +77,17 @@ export class ApprovalsController {
 
   @Delete(':id')
   @Roles(UserRole.NATIONAL_ADMIN)
-  @ApiOperation({ summary: 'Delete approval request' })
-  @ApiResponse({ status: 200, description: 'Approval deleted successfully' })
-  remove(@Param('id') id: string) {
-    return this.approvalsService.remove(id);
+  @ApiOperation({ summary: 'Archive approval request' })
+  @ApiResponse({ status: 200, description: 'Approval archived successfully' })
+  remove(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.approvalsService.remove(id, user._id || user.id);
+  }
+
+  @Patch(':id/restore')
+  @Roles(UserRole.NATIONAL_ADMIN)
+  @ApiOperation({ summary: 'Restore archived approval request' })
+  @ApiResponse({ status: 200, description: 'Approval restored successfully' })
+  restore(@Param('id') id: string) {
+    return this.approvalsService.restore(id);
   }
 }

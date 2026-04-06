@@ -26,7 +26,13 @@ export class Conservation extends Document {
   beforeImages: string[];
 
   @Prop([String])
+  beforeImageFileIds?: string[];
+
+  @Prop([String])
   afterImages: string[];
+
+  @Prop([String])
+  afterImageFileIds?: string[];
 
   @Prop({ required: true })
   contractor: string;
@@ -49,6 +55,15 @@ export class Conservation extends Document {
   @Prop({ type: Types.ObjectId, ref: 'User' })
   createdBy?: Types.ObjectId;
 
+  @Prop({ default: false, index: true })
+  isDeleted: boolean;
+
+  @Prop()
+  deletedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  deletedBy?: Types.ObjectId;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,3 +74,4 @@ export const ConservationSchema = SchemaFactory.createForClass(Conservation);
 ConservationSchema.index({ siteId: 1, status: 1 });
 ConservationSchema.index({ status: 1 });
 ConservationSchema.index({ startDate: 1 });
+ConservationSchema.index({ isDeleted: 1, status: 1, startDate: -1 });

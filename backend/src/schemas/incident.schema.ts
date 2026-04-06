@@ -50,6 +50,18 @@ export class Incident extends Document {
   @Prop([String])
   images?: string[];
 
+  @Prop([String])
+  imageFileIds?: string[];
+
+  @Prop({ default: false, index: true })
+  isDeleted: boolean;
+
+  @Prop()
+  deletedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  deletedBy?: Types.ObjectId;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -60,6 +72,7 @@ export const IncidentSchema = SchemaFactory.createForClass(Incident);
 IncidentSchema.index({ siteId: 1, status: 1 });
 IncidentSchema.index({ severity: 1 });
 IncidentSchema.index({ createdAt: -1 });
+IncidentSchema.index({ isDeleted: 1, status: 1, createdAt: -1 });
 
 // Virtual field for days open
 IncidentSchema.virtual('daysOpen').get(function () {

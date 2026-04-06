@@ -16,6 +16,7 @@ import { IncidentsModule } from './modules/incidents/incidents.module';
 import { ConservationModule } from './modules/conservation/conservation.module';
 import { ApprovalsModule } from './modules/approvals/approvals.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 const requireEnv = (env: NodeJS.ProcessEnv, key: string) => {
   const value = env[key]?.trim();
@@ -108,6 +109,7 @@ const validateEnvironment = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv => {
     ConservationModule,
     ApprovalsModule,
     DashboardModule,
+    UploadsModule,
   ],
   providers: [
     {

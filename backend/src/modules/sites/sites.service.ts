@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Site } from '@schemas/site.schema';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
@@ -25,10 +25,10 @@ export class SitesService {
   }
 
   async findAll(query: QuerySitesDto): Promise<{ sites: any[]; total: number; page: number; limit: number }> {
-    const { page = 1, limit = 10, state, riskLevel, protectionStatus, search } = query;
+    const { page = 1, limit = 10, state, riskLevel, protectionStatus, search, archived } = query;
     const skip = (page - 1) * limit;
 
-    const filter: any = {};
+    const filter: any = archived ? { isDeleted: true } : { isDeleted: { $ne: true } };
 
     if (state) {
       filter.state = state;
@@ -67,6 +67,7 @@ export class SitesService {
 
     const sites = await this.siteModel
       .find({
+        isDeleted: { $ne: true },
         coordinates: {
           $near: {
             $geometry: {
@@ -85,7 +86,7 @@ export class SitesService {
   }
 
   async findOne(id: string): Promise<any> {
-    const site = await this.siteModel.findById(id).lean().exec();
+    const site = await this.siteModel.findOne({ _id: id, isDeleted: { $ne: true } }).lean().exec();
 
     if (!site) {
       throw new NotFoundException('Site not found');
@@ -104,7 +105,9 @@ export class SitesService {
       };
     }
 
-    const site = await this.siteModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    const site = await this.siteModel
+      .findOneAndUpdate({ _id: id, isDeleted: { $ne: true } }, updateData, { new: true })
+      .exec();
 
     if (!site) {
       throw new NotFoundException('Site not found');
@@ -113,12 +116,40 @@ export class SitesService {
     return site;
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.siteModel.findByIdAndDelete(id).exec();
+  async remove(id: string, userId: string): Promise<void> {
+    const result = await this.siteModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: { $ne: true } },
+        {
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedBy: new Types.ObjectId(userId),
+        },
+      )
+      .exec();
 
     if (!result) {
       throw new NotFoundException('Site not found');
     }
+  }
+
+  async restore(id: string): Promise<Site> {
+    const site = await this.siteModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: true },
+        {
+          $set: { isDeleted: false },
+          $unset: { deletedAt: 1, deletedBy: 1 },
+        },
+        { new: true },
+      )
+      .exec();
+
+    if (!site) {
+      throw new NotFoundException('Archived site not found');
+    }
+
+    return site;
   }
 
   async getStatistics(id: string): Promise<any> {
@@ -126,7 +157,7 @@ export class SitesService {
 
     // Get related counts using aggregation
     const stats = await this.siteModel.aggregate([
-      { $match: { _id: site._id } },
+      { $match: { _id: site._id, isDeleted: { $ne: true } } },
       {
         $lookup: {
           from: 'incidents',
@@ -152,23 +183,49 @@ export class SitesService {
           protectionStatus: 1,
           visitorCapacity: 1,
           lastInspectionDate: 1,
-          totalIncidents: { $size: '$incidents' },
+          totalIncidents: {
+            $size: {
+              $filter: {
+                input: '$incidents',
+                as: 'incident',
+                cond: { $ne: ['$$incident.isDeleted', true] },
+              },
+            },
+          },
           activeIncidents: {
             $size: {
               $filter: {
                 input: '$incidents',
                 as: 'incident',
-                cond: { $eq: ['$$incident.status', 'OPEN'] },
+                cond: {
+                  $and: [
+                    { $eq: ['$$incident.status', 'OPEN'] },
+                    { $ne: ['$$incident.isDeleted', true] },
+                  ],
+                },
               },
             },
           },
-          totalConservationProjects: { $size: '$conservations' },
+          totalConservationProjects: {
+            $size: {
+              $filter: {
+                input: '$conservations',
+                as: 'conservation',
+                cond: { $ne: ['$$conservation.isDeleted', true] },
+              },
+            },
+          },
           ongoingConservation: {
             $size: {
               $filter: {
                 input: '$conservations',
                 as: 'conservation',
-                cond: { $eq: ['$$conservation.status', 'ONGOING'] },
+                cond: {
+                  $and: [
+                    { $eq: ['$$conservation.status', 'ONGOING'] },
+                    { $ne: ['$$conservation.isDeleted', true] },
+                  ],
+                },
               },
             },
           },

@@ -46,6 +46,15 @@ export class Approval extends Document {
   @Prop({ default: false })
   isPriority: boolean;
 
+  @Prop({ default: false, index: true })
+  isDeleted: boolean;
+
+  @Prop()
+  deletedAt?: Date;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  deletedBy?: Types.ObjectId;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -57,3 +66,4 @@ ApprovalSchema.index({ status: 1, submittedBy: 1 });
 ApprovalSchema.index({ type: 1 });
 ApprovalSchema.index({ createdAt: -1 });
 ApprovalSchema.index({ isPriority: -1 });
+ApprovalSchema.index({ isDeleted: 1, status: 1, createdAt: -1 });

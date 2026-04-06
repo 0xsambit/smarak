@@ -18,6 +18,7 @@ import { NearbyQueryDto } from './dto/nearby-query.dto';
 import { ClerkAuthGuard } from '@common/guards/clerk-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { UserRole } from '@schemas/user.schema';
 
 @ApiTags('sites')
@@ -73,9 +74,17 @@ export class SitesController {
 
   @Delete(':id')
   @Roles(UserRole.NATIONAL_ADMIN)
-  @ApiOperation({ summary: 'Delete site' })
-  @ApiResponse({ status: 200, description: 'Site deleted successfully' })
-  remove(@Param('id') id: string) {
-    return this.sitesService.remove(id);
+  @ApiOperation({ summary: 'Archive site' })
+  @ApiResponse({ status: 200, description: 'Site archived successfully' })
+  remove(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.sitesService.remove(id, user._id || user.id);
+  }
+
+  @Patch(':id/restore')
+  @Roles(UserRole.NATIONAL_ADMIN)
+  @ApiOperation({ summary: 'Restore archived site' })
+  @ApiResponse({ status: 200, description: 'Site restored successfully' })
+  restore(@Param('id') id: string) {
+    return this.sitesService.restore(id);
   }
 }

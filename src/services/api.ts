@@ -62,6 +62,10 @@ export const sitesAPI = {
   getNearby: (latitude: number, longitude: number, maxDistance?: number) =>
     api.get('/sites/nearby', { params: { latitude, longitude, maxDistance } }),
   getStatistics: (id: string) => api.get(`/sites/${id}/statistics`),
+  create: (data: Record<string, unknown>) => api.post('/sites', data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/sites/${id}`, data),
+  remove: (id: string) => api.delete(`/sites/${id}`),
+  restore: (id: string) => api.patch(`/sites/${id}/restore`),
 };
 
 export const incidentsAPI = {
@@ -69,17 +73,43 @@ export const incidentsAPI = {
   getById: (id: string) => api.get(`/incidents/${id}`),
   create: (data: Record<string, unknown>) => api.post('/incidents', data),
   update: (id: string, data: Record<string, unknown>) => api.patch(`/incidents/${id}`, data),
+  remove: (id: string) => api.delete(`/incidents/${id}`),
+  restore: (id: string) => api.patch(`/incidents/${id}/restore`),
 };
 
 export const conservationAPI = {
   getAll: (params?: Record<string, unknown>) => api.get('/conservation', { params }),
   getById: (id: string) => api.get(`/conservation/${id}`),
+  create: (data: Record<string, unknown>) => api.post('/conservation', data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/conservation/${id}`, data),
+  remove: (id: string) => api.delete(`/conservation/${id}`),
+  restore: (id: string) => api.patch(`/conservation/${id}/restore`),
 };
 
 export const approvalsAPI = {
   getAll: (params?: Record<string, unknown>) => api.get('/approvals', { params }),
   getById: (id: string) => api.get(`/approvals/${id}`),
+  create: (data: Record<string, unknown>) => api.post('/approvals', data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/approvals/${id}`, data),
   review: (id: string, data: Record<string, unknown>) => api.patch(`/approvals/${id}/review`, data),
+  remove: (id: string) => api.delete(`/approvals/${id}`),
+  restore: (id: string) => api.patch(`/approvals/${id}/restore`),
+};
+
+export const uploadsAPI = {
+  uploadImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return api.post('/uploads/images', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+  removeImage: (id: string) => api.delete(`/uploads/images/${id}`),
+  getImageUrl: (id: string) =>
+    `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/uploads/images/${id}`,
 };
 
 export const usersAPI = {

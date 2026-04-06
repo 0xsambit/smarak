@@ -22,7 +22,7 @@ export class IncidentsService {
     const { page = 1, limit = 10, siteId, status, severity } = query;
     const skip = (page - 1) * limit;
 
-    const filter: any = {};
+    const filter: any = { isDeleted: { $ne: true } };
 
     if (siteId) {
       filter.siteId = new Types.ObjectId(siteId);
@@ -59,7 +59,7 @@ export class IncidentsService {
 
   async findOne(id: string): Promise<any> {
     const incident = await this.incidentModel
-      .findById(id)
+      .findOne({ _id: id, isDeleted: { $ne: true } })
       .populate('siteId', 'name state district')
       .populate('reportedBy', 'name email')
       .lean()
@@ -73,7 +73,7 @@ export class IncidentsService {
   }
 
   async updateStatus(id: string, updateIncidentDto: UpdateIncidentDto): Promise<Incident> {
-    const incident = await this.incidentModel.findById(id);
+    const incident = await this.incidentModel.findOne({ _id: id, isDeleted: { $ne: true } });
 
     if (!incident) {
       throw new NotFoundException('Incident not found');
@@ -94,12 +94,40 @@ export class IncidentsService {
     return incident.save();
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.incidentModel.findByIdAndDelete(id).exec();
+  async remove(id: string, userId: string): Promise<void> {
+    const result = await this.incidentModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: { $ne: true } },
+        {
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedBy: new Types.ObjectId(userId),
+        },
+      )
+      .exec();
 
     if (!result) {
       throw new NotFoundException('Incident not found');
     }
+  }
+
+  async restore(id: string): Promise<Incident> {
+    const incident = await this.incidentModel
+      .findOneAndUpdate(
+        { _id: id, isDeleted: true },
+        {
+          $set: { isDeleted: false },
+          $unset: { deletedAt: 1, deletedBy: 1 },
+        },
+        { new: true },
+      )
+      .exec();
+
+    if (!incident) {
+      throw new NotFoundException('Archived incident not found');
+    }
+
+    return incident;
   }
 
   // Method for dashboard: count by severity
@@ -107,6 +135,7 @@ export class IncidentsService {
     return this.incidentModel.aggregate([
       {
         $match: {
+          isDeleted: { $ne: true },
           status: { $ne: IncidentStatus.RESOLVED },
         },
       },

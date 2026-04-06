@@ -24,4 +24,10 @@ export class CreateIncidentDto {
   @IsArray()
   @IsString({ each: true })
   images?: string[];
+
+  @ApiPropertyOptional({ type: [String], description: 'GridFS file ids for incident images' })
+  @IsOptional()
+  @IsArray()
+  @IsMongoId({ each: true })
+  imageFileIds?: string[];
 }

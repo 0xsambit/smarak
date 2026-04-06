@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
+import Sites from "./pages/Sites";
 
 type ProtectedRouteProps = {
 	children: ReactNode;
@@ -33,6 +34,14 @@ const App = () => {
 					element={
 						<ProtectedRoute>
 							<Dashboard />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/sites"
+					element={
+						<ProtectedRoute>
+							<Sites />
 						</ProtectedRoute>
 					}
 				/>
