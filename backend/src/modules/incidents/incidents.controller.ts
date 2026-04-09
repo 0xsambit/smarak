@@ -28,32 +28,33 @@ export class IncidentsController {
   constructor(private readonly incidentsService: IncidentsService) {}
 
   @Post()
+  @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN, UserRole.SITE_OFFICER)
   @ApiOperation({ summary: 'Report a new incident' })
   @ApiResponse({ status: 201, description: 'Incident created successfully' })
   create(@Body() createIncidentDto: CreateIncidentDto, @CurrentUser() user: any) {
-    return this.incidentsService.create(createIncidentDto, user._id || user.id);
+    return this.incidentsService.create(createIncidentDto, user);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all incidents with filters' })
   @ApiResponse({ status: 200, description: 'Incidents retrieved successfully' })
-  findAll(@Query() query: QueryIncidentsDto) {
-    return this.incidentsService.findAll(query);
+  findAll(@Query() query: QueryIncidentsDto, @CurrentUser() user: any) {
+    return this.incidentsService.findAll(query, user);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get incident by ID' })
   @ApiResponse({ status: 200, description: 'Incident found' })
-  findOne(@Param('id') id: string) {
-    return this.incidentsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.incidentsService.findOne(id, user);
   }
 
   @Patch(':id')
   @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN, UserRole.SITE_OFFICER)
   @ApiOperation({ summary: 'Update incident status' })
   @ApiResponse({ status: 200, description: 'Incident updated successfully' })
-  update(@Param('id') id: string, @Body() updateIncidentDto: UpdateIncidentDto) {
-    return this.incidentsService.updateStatus(id, updateIncidentDto);
+  update(@Param('id') id: string, @Body() updateIncidentDto: UpdateIncidentDto, @CurrentUser() user: any) {
+    return this.incidentsService.updateStatus(id, updateIncidentDto, user);
   }
 
   @Delete(':id')
@@ -61,14 +62,14 @@ export class IncidentsController {
   @ApiOperation({ summary: 'Archive incident' })
   @ApiResponse({ status: 200, description: 'Incident archived successfully' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.incidentsService.remove(id, user._id || user.id);
+    return this.incidentsService.remove(id, user);
   }
 
   @Patch(':id/restore')
   @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN)
   @ApiOperation({ summary: 'Restore archived incident' })
   @ApiResponse({ status: 200, description: 'Incident restored successfully' })
-  restore(@Param('id') id: string) {
-    return this.incidentsService.restore(id);
+  restore(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.incidentsService.restore(id, user);
   }
 }

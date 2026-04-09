@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Approval, ApprovalStatus, ApprovalType } from '@schemas/approval.schema';
@@ -6,6 +6,7 @@ import { Conservation, ConservationStatus } from '@schemas/conservation.schema';
 import { Footfall } from '@schemas/footfall.schema';
 import { Incident, IncidentSeverity, IncidentStatus } from '@schemas/incident.schema';
 import { RiskLevel, Site } from '@schemas/site.schema';
+import { UserRole } from '@schemas/user.schema';
 import { DashboardQueryDto, DashboardScope } from './dto/dashboard-query.dto';
 
 @Injectable()
@@ -18,10 +19,11 @@ export class DashboardService {
     @InjectModel(Footfall.name) private footfallModel: Model<Footfall>,
   ) {}
 
-  async getOverview(query: DashboardQueryDto) {
-    const scope = query.scope || DashboardScope.NATIONAL;
-    const state = query.state?.trim();
-    const siteId = query.siteId?.trim();
+  async getOverview(query: DashboardQueryDto, user: any) {
+    const scopedQuery = await this.resolveScopedQuery(query, user);
+    const scope = scopedQuery.scope || DashboardScope.NATIONAL;
+    const state = scopedQuery.state?.trim();
+    const siteId = scopedQuery.siteId?.trim();
 
     const siteFilter = this.buildSiteFilter(scope, state, siteId);
     if (!siteFilter) {
@@ -68,6 +70,87 @@ export class DashboardService {
       regionSummary,
       criticalAlerts,
       pendingApprovals,
+    };
+  }
+
+  private toIdString(value: unknown): string | null {
+    if (!value) {
+      return null;
+    }
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (typeof value === 'object' && value !== null && '_id' in value) {
+      return this.toIdString((value as any)._id);
+    }
+
+    if (typeof value === 'object' && value !== null && 'toString' in value) {
+      const asString = (value as { toString: () => string }).toString();
+      return asString && asString !== '[object Object]' ? asString : null;
+    }
+
+    return null;
+  }
+
+  private async resolveActorState(user: any): Promise<string | null> {
+    const candidateIds = [this.toIdString(user?.stateId), this.toIdString(user?.siteId)].filter(
+      (candidate): candidate is string => !!candidate,
+    );
+
+    for (const candidateId of candidateIds) {
+      if (!Types.ObjectId.isValid(candidateId)) {
+        continue;
+      }
+
+      const site = await this.siteModel
+        .findById(candidateId)
+        .select('state')
+        .lean()
+        .exec();
+
+      if (site?.state) {
+        return site.state;
+      }
+    }
+
+    return null;
+  }
+
+  private async resolveScopedQuery(query: DashboardQueryDto, user: any): Promise<DashboardQueryDto> {
+    const role = user?.role as UserRole | undefined;
+
+    if (!role) {
+      throw new ForbiddenException('Authenticated user role is unavailable');
+    }
+
+    if (role === UserRole.NATIONAL_ADMIN) {
+      return query;
+    }
+
+    if (role === UserRole.SITE_OFFICER) {
+      const siteId = this.toIdString(user?.siteId);
+
+      if (!siteId || !Types.ObjectId.isValid(siteId)) {
+        throw new ForbiddenException('Site officer must be assigned to a site');
+      }
+
+      return {
+        scope: DashboardScope.SITE,
+        siteId,
+      };
+    }
+
+    const state = await this.resolveActorState(user);
+
+    if (!state) {
+      throw new ForbiddenException('State admin must be assigned to a state or site');
+    }
+
+    return {
+      scope: DashboardScope.STATE,
+      state,
     };
   }
 

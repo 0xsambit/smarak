@@ -318,13 +318,33 @@ const Dashboard: React.FC = () => {
 								Operations Portal
 							</h2>
 							<p className="text-sm text-stone-600">
-								Manage operational entities with full CRUD workflows.
+								Manage operational entities with role-aware CRUD workflows.
+							</p>
+							<p className="mt-1 text-xs uppercase tracking-[0.12em] text-stone-500">
+								Active Role: {currentUser?.role || "Unknown"}
 							</p>
 						</div>
+					</div>
+					<div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
 						<Link
 							to="/sites"
-							className="rounded-md bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700">
-							Open Sites Management
+							className="rounded-md bg-stone-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-stone-700">
+							Sites
+						</Link>
+						<Link
+							to="/incidents"
+							className="rounded-md border border-stone-300 px-4 py-2 text-center text-sm font-medium text-stone-700 hover:bg-stone-100">
+							Incidents
+						</Link>
+						<Link
+							to="/conservation"
+							className="rounded-md border border-stone-300 px-4 py-2 text-center text-sm font-medium text-stone-700 hover:bg-stone-100">
+							Conservation
+						</Link>
+						<Link
+							to="/approvals"
+							className="rounded-md border border-stone-300 px-4 py-2 text-center text-sm font-medium text-stone-700 hover:bg-stone-100">
+							Approvals
 						</Link>
 					</div>
 				</section>

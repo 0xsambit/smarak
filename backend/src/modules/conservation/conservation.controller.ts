@@ -38,23 +38,23 @@ export class ConservationController {
   @Get()
   @ApiOperation({ summary: 'Get all conservation projects' })
   @ApiResponse({ status: 200, description: 'Conservation projects retrieved successfully' })
-  findAll(@Query() query: QueryConservationDto) {
-    return this.conservationService.findAll(query);
+  findAll(@Query() query: QueryConservationDto, @CurrentUser() user: any) {
+    return this.conservationService.findAll(query, user);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get conservation project by ID' })
   @ApiResponse({ status: 200, description: 'Conservation project found' })
-  findOne(@Param('id') id: string) {
-    return this.conservationService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.conservationService.findOne(id, user);
   }
 
   @Patch(':id')
   @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN)
   @ApiOperation({ summary: 'Update conservation project' })
   @ApiResponse({ status: 200, description: 'Conservation project updated successfully' })
-  update(@Param('id') id: string, @Body() updateConservationDto: UpdateConservationDto) {
-    return this.conservationService.update(id, updateConservationDto);
+  update(@Param('id') id: string, @Body() updateConservationDto: UpdateConservationDto, @CurrentUser() user: any) {
+    return this.conservationService.update(id, updateConservationDto, user);
   }
 
   @Delete(':id')
@@ -69,7 +69,7 @@ export class ConservationController {
   @Roles(UserRole.NATIONAL_ADMIN)
   @ApiOperation({ summary: 'Restore archived conservation project' })
   @ApiResponse({ status: 200, description: 'Conservation project restored successfully' })
-  restore(@Param('id') id: string) {
-    return this.conservationService.restore(id);
+  restore(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.conservationService.restore(id, user);
   }
 }

@@ -1,5 +1,5 @@
-import { IsInt, IsOptional, IsEnum, IsMongoId, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsInt, IsOptional, IsEnum, IsMongoId, Min, IsBoolean } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ConservationStatus } from '@schemas/conservation.schema';
 
@@ -27,4 +27,13 @@ export class QueryConservationDto {
   @IsOptional()
   @IsEnum(ConservationStatus)
   status?: ConservationStatus;
+
+  @ApiPropertyOptional({
+    description: 'When true, only archived conservation projects are returned',
+    default: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true' || value === '1')
+  @IsBoolean()
+  archived?: boolean = false;
 }

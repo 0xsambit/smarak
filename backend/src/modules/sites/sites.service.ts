@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Site } from '@schemas/site.schema';
+import { UserRole } from '@schemas/user.schema';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
 import { QuerySitesDto } from './dto/query-sites.dto';
@@ -11,7 +12,21 @@ import { NearbyQueryDto } from './dto/nearby-query.dto';
 export class SitesService {
   constructor(@InjectModel(Site.name) private siteModel: Model<Site>) {}
 
-  async create(createSiteDto: CreateSiteDto): Promise<Site> {
+  async create(createSiteDto: CreateSiteDto, actor: any): Promise<Site> {
+    const role = this.getActorRole(actor);
+
+    if (role === UserRole.STATE_ADMIN) {
+      const assignedState = await this.resolveActorState(actor);
+
+      if (!assignedState) {
+        throw new ForbiddenException('State admin must be assigned to a state or site');
+      }
+
+      if (createSiteDto.state.trim().toLowerCase() !== assignedState.trim().toLowerCase()) {
+        throw new ForbiddenException('State admins can only create sites in their assigned state');
+      }
+    }
+
     const siteData = {
       ...createSiteDto,
       coordinates: {
@@ -24,7 +39,10 @@ export class SitesService {
     return site.save();
   }
 
-  async findAll(query: QuerySitesDto): Promise<{ sites: any[]; total: number; page: number; limit: number }> {
+  async findAll(
+    query: QuerySitesDto,
+    actor: any,
+  ): Promise<{ sites: any[]; total: number; page: number; limit: number }> {
     const { page = 1, limit = 10, state, riskLevel, protectionStatus, search, archived } = query;
     const skip = (page - 1) * limit;
 
@@ -49,6 +67,8 @@ export class SitesService {
       ];
     }
 
+    await this.applyRoleScopeToFilter(filter, actor);
+
     const [sites, total] = await Promise.all([
       this.siteModel.find(filter).skip(skip).limit(limit).lean().exec(),
       this.siteModel.countDocuments(filter),
@@ -62,22 +82,26 @@ export class SitesService {
     };
   }
 
-  async findNearby(nearbyQuery: NearbyQueryDto): Promise<any[]> {
+  async findNearby(nearbyQuery: NearbyQueryDto, actor: any): Promise<any[]> {
     const { latitude, longitude, maxDistance } = nearbyQuery;
 
-    const sites = await this.siteModel
-      .find({
-        isDeleted: { $ne: true },
-        coordinates: {
-          $near: {
-            $geometry: {
-              type: 'Point',
-              coordinates: [longitude, latitude],
-            },
-            $maxDistance: maxDistance,
+    const filter: any = {
+      isDeleted: { $ne: true },
+      coordinates: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [longitude, latitude],
           },
+          $maxDistance: maxDistance,
         },
-      })
+      },
+    };
+
+    await this.applyRoleScopeToFilter(filter, actor);
+
+    const sites = await this.siteModel
+      .find(filter)
       .limit(20)
       .lean()
       .exec();
@@ -85,8 +109,11 @@ export class SitesService {
     return sites;
   }
 
-  async findOne(id: string): Promise<any> {
-    const site = await this.siteModel.findOne({ _id: id, isDeleted: { $ne: true } }).lean().exec();
+  async findOne(id: string, actor: any): Promise<any> {
+    const filter: any = { _id: id, isDeleted: { $ne: true } };
+    await this.applyRoleScopeToFilter(filter, actor);
+
+    const site = await this.siteModel.findOne(filter).lean().exec();
 
     if (!site) {
       throw new NotFoundException('Site not found');
@@ -95,7 +122,36 @@ export class SitesService {
     return site;
   }
 
-  async update(id: string, updateSiteDto: UpdateSiteDto): Promise<Site> {
+  async update(id: string, updateSiteDto: UpdateSiteDto, actor: any): Promise<Site> {
+    const role = this.getActorRole(actor);
+    const existingSite = await this.siteModel
+      .findOne({ _id: id, isDeleted: { $ne: true } })
+      .lean()
+      .exec();
+
+    if (!existingSite) {
+      throw new NotFoundException('Site not found');
+    }
+
+    if (role === UserRole.STATE_ADMIN) {
+      const assignedState = await this.resolveActorState(actor);
+
+      if (!assignedState) {
+        throw new ForbiddenException('State admin must be assigned to a state or site');
+      }
+
+      if (existingSite.state.trim().toLowerCase() !== assignedState.trim().toLowerCase()) {
+        throw new ForbiddenException('State admins can only update sites in their assigned state');
+      }
+
+      if (
+        updateSiteDto.state &&
+        updateSiteDto.state.trim().toLowerCase() !== assignedState.trim().toLowerCase()
+      ) {
+        throw new ForbiddenException('State admins cannot move a site to another state');
+      }
+    }
+
     let updateData: any = { ...updateSiteDto };
 
     if (updateSiteDto.coordinates) {
@@ -152,8 +208,8 @@ export class SitesService {
     return site;
   }
 
-  async getStatistics(id: string): Promise<any> {
-    const site = await this.findOne(id);
+  async getStatistics(id: string, actor: any): Promise<any> {
+    const site = await this.findOne(id, actor);
 
     // Get related counts using aggregation
     const stats = await this.siteModel.aggregate([
@@ -234,5 +290,87 @@ export class SitesService {
     ]);
 
     return stats[0] || {};
+  }
+
+  private getActorRole(actor: any): UserRole {
+    const role = actor?.role as UserRole | undefined;
+
+    if (!role) {
+      throw new ForbiddenException('Authenticated user role is unavailable');
+    }
+
+    return role;
+  }
+
+  private toIdString(value: unknown): string | null {
+    if (!value) {
+      return null;
+    }
+
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (typeof value === 'object' && value !== null && '_id' in value) {
+      return this.toIdString((value as any)._id);
+    }
+
+    if (typeof value === 'object' && value !== null && 'toString' in value) {
+      const asString = (value as { toString: () => string }).toString();
+      return asString && asString !== '[object Object]' ? asString : null;
+    }
+
+    return null;
+  }
+
+  private async resolveActorState(actor: any): Promise<string | null> {
+    const candidateIds = [this.toIdString(actor?.stateId), this.toIdString(actor?.siteId)].filter(
+      (candidate): candidate is string => !!candidate,
+    );
+
+    for (const candidateId of candidateIds) {
+      if (!Types.ObjectId.isValid(candidateId)) {
+        continue;
+      }
+
+      const site = await this.siteModel
+        .findById(candidateId)
+        .select('state')
+        .lean()
+        .exec();
+
+      if (site?.state) {
+        return site.state;
+      }
+    }
+
+    return null;
+  }
+
+  private async applyRoleScopeToFilter(filter: Record<string, unknown>, actor: any) {
+    const role = this.getActorRole(actor);
+
+    if (role === UserRole.NATIONAL_ADMIN) {
+      return;
+    }
+
+    if (role === UserRole.SITE_OFFICER) {
+      const siteId = this.toIdString(actor?.siteId);
+
+      if (!siteId || !Types.ObjectId.isValid(siteId)) {
+        throw new ForbiddenException('Site officer must be assigned to a site');
+      }
+
+      filter._id = new Types.ObjectId(siteId);
+      return;
+    }
+
+    const assignedState = await this.resolveActorState(actor);
+
+    if (!assignedState) {
+      throw new ForbiddenException('State admin must be assigned to a state or site');
+    }
+
+    filter.state = assignedState;
   }
 }

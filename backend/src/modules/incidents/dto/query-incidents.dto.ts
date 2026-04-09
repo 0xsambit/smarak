@@ -1,5 +1,5 @@
-import { IsInt, IsOptional, IsString, IsEnum, IsMongoId, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsInt, IsOptional, IsEnum, IsMongoId, Min, IsBoolean } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IncidentStatus, IncidentSeverity } from '@schemas/incident.schema';
 
@@ -32,4 +32,13 @@ export class QueryIncidentsDto {
   @IsOptional()
   @IsEnum(IncidentSeverity)
   severity?: IncidentSeverity;
+
+  @ApiPropertyOptional({
+    description: 'When true, only archived incidents are returned',
+    default: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true' || value === '1')
+  @IsBoolean()
+  archived?: boolean = false;
 }

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { Building2, Plus, Search, SquarePen, Trash2, RotateCcw } from "lucide-react";
-import { setAuthTokenProvider, sitesAPI } from "../services/api";
+import { setAuthTokenProvider, sitesAPI, usersAPI } from "../services/api";
 import type {
 	ProtectionStatus,
 	RiskLevel,
@@ -12,6 +12,8 @@ import type {
 } from "../types/site";
 
 const PAGE_SIZE = 10;
+
+type UserRole = "NATIONAL_ADMIN" | "STATE_ADMIN" | "SITE_OFFICER";
 
 const PROTECTION_OPTIONS: ProtectionStatus[] = ["PROTECTED", "RESTRICTED", "OPEN"];
 const RISK_OPTIONS: RiskLevel[] = ["LOW", "MEDIUM", "HIGH"];
@@ -79,6 +81,7 @@ const Sites: React.FC = () => {
 	const [editingSite, setEditingSite] = useState<SiteRecord | null>(null);
 	const [formValues, setFormValues] = useState<SiteFormValues>(EMPTY_FORM);
 	const [formError, setFormError] = useState<string | null>(null);
+	const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
 
 	useEffect(() => {
 		if (!isLoaded) {
@@ -88,6 +91,36 @@ const Sites: React.FC = () => {
 		setAuthTokenProvider(() => getToken());
 		return () => setAuthTokenProvider(null);
 	}, [getToken, isLoaded]);
+
+	useEffect(() => {
+		if (!isLoaded) {
+			return;
+		}
+
+		let cancelled = false;
+
+		const loadRole = async () => {
+			try {
+				const { data } = await usersAPI.getMe();
+				if (!cancelled) {
+					setCurrentRole(data?.role as UserRole);
+				}
+			} catch {
+				if (!cancelled) {
+					setCurrentRole(null);
+				}
+			}
+		};
+
+		loadRole();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [isLoaded]);
+
+	const canManageSites = currentRole === "NATIONAL_ADMIN" || currentRole === "STATE_ADMIN";
+	const canArchiveSites = currentRole === "NATIONAL_ADMIN";
 
 	const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PAGE_SIZE)), [total]);
 
@@ -125,6 +158,11 @@ const Sites: React.FC = () => {
 	}, [fetchSites]);
 
 	const openCreate = () => {
+		if (!canManageSites) {
+			setError("Only admins can create or update sites.");
+			return;
+		}
+
 		setEditingSite(null);
 		setFormValues(EMPTY_FORM);
 		setFormError(null);
@@ -132,6 +170,11 @@ const Sites: React.FC = () => {
 	};
 
 	const openEdit = (site: SiteRecord) => {
+		if (!canManageSites) {
+			setError("Only admins can create or update sites.");
+			return;
+		}
+
 		setEditingSite(site);
 		setFormValues(toFormValues(site));
 		setFormError(null);
@@ -150,6 +193,11 @@ const Sites: React.FC = () => {
 	};
 
 	const handleArchive = async (site: SiteRecord) => {
+		if (!canArchiveSites) {
+			setError("Only national admins can archive or restore sites.");
+			return;
+		}
+
 		const shouldArchive = window.confirm(`Archive site \"${site.name}\"?`);
 
 		if (!shouldArchive) {
@@ -165,6 +213,11 @@ const Sites: React.FC = () => {
 	};
 
 	const handleRestore = async (site: SiteRecord) => {
+		if (!canArchiveSites) {
+			setError("Only national admins can archive or restore sites.");
+			return;
+		}
+
 		try {
 			await sitesAPI.restore(site._id);
 			await fetchSites();
@@ -179,6 +232,12 @@ const Sites: React.FC = () => {
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
+
+		if (!canManageSites) {
+			setFormError("Only admins can create or update sites.");
+			return;
+		}
+
 		setSubmitting(true);
 		setFormError(null);
 
@@ -222,17 +281,26 @@ const Sites: React.FC = () => {
 							className="rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100">
 							Back to Dashboard
 						</Link>
-						<button
-							onClick={openCreate}
-							className="inline-flex items-center gap-2 rounded-md bg-stone-900 px-3 py-2 text-sm font-medium text-white hover:bg-stone-700">
-							<Plus className="h-4 w-4" />
-							New Site
-						</button>
+						{canManageSites ? (
+							<button
+								onClick={openCreate}
+								className="inline-flex items-center gap-2 rounded-md bg-stone-900 px-3 py-2 text-sm font-medium text-white hover:bg-stone-700">
+								<Plus className="h-4 w-4" />
+								New Site
+							</button>
+						) : null}
 					</div>
 				</div>
 			</header>
 
 			<main className="mx-auto w-full max-w-350 space-y-4 px-6 py-6">
+				{!canManageSites ? (
+					<div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+						You have read-only access to site data. Admin role is required for
+						create or update actions.
+					</div>
+				) : null}
+
 				<section className="rounded-xl border border-stone-200 bg-white p-4">
 					<div className="grid grid-cols-1 gap-3 md:grid-cols-6">
 						<div className="relative md:col-span-2">
@@ -374,28 +442,32 @@ const Sites: React.FC = () => {
 													<div className="flex items-center gap-2">
 														{!showArchived ? (
 															<>
-																<button
-																	onClick={() =>
-																		openEdit(
-																			site,
-																		)
-																	}
-																	className="inline-flex items-center gap-1 rounded-md border border-stone-300 px-2 py-1 text-xs text-stone-700 hover:bg-stone-100">
-																	<SquarePen className="h-3.5 w-3.5" />
-																	Edit
-																</button>
-																<button
-																	onClick={() =>
-																		handleArchive(
-																			site,
-																		)
-																	}
-																	className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50">
-																	<Trash2 className="h-3.5 w-3.5" />
-																	Archive
-																</button>
+																{canManageSites ? (
+																	<button
+																		onClick={() =>
+																			openEdit(
+																				site,
+																			)
+																		}
+																		className="inline-flex items-center gap-1 rounded-md border border-stone-300 px-2 py-1 text-xs text-stone-700 hover:bg-stone-100">
+																		<SquarePen className="h-3.5 w-3.5" />
+																		Edit
+																	</button>
+																) : null}
+																{canArchiveSites ? (
+																	<button
+																		onClick={() =>
+																			handleArchive(
+																				site,
+																			)
+																		}
+																		className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50">
+																		<Trash2 className="h-3.5 w-3.5" />
+																		Archive
+																	</button>
+																) : null}
 															</>
-														) : (
+														) : canArchiveSites ? (
 															<button
 																onClick={() =>
 																	handleRestore(
@@ -406,7 +478,7 @@ const Sites: React.FC = () => {
 																<RotateCcw className="h-3.5 w-3.5" />
 																Restore
 															</button>
-														)}
+														) : null}
 													</div>
 												</td>
 											</tr>
@@ -442,7 +514,7 @@ const Sites: React.FC = () => {
 				</section>
 			</main>
 
-			{showForm ? (
+			{showForm && canManageSites ? (
 				<div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
 					<div className="w-full max-w-2xl rounded-xl border border-stone-200 bg-white p-5 shadow-2xl">
 						<div className="mb-4 flex items-center justify-between">

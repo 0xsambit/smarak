@@ -6,6 +6,9 @@ import Home from "./pages/Home";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Sites from "./pages/Sites";
+import Incidents from "./pages/Incidents";
+import Conservation from "./pages/Conservation";
+import Approvals from "./pages/Approvals";
 
 type ProtectedRouteProps = {
 	children: ReactNode;
@@ -42,6 +45,30 @@ const App = () => {
 					element={
 						<ProtectedRoute>
 							<Sites />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/incidents"
+					element={
+						<ProtectedRoute>
+							<Incidents />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/conservation"
+					element={
+						<ProtectedRoute>
+							<Conservation />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path="/approvals"
+					element={
+						<ProtectedRoute>
+							<Approvals />
 						</ProtectedRoute>
 					}
 				/>

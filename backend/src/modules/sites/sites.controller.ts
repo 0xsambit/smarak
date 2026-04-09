@@ -32,44 +32,44 @@ export class SitesController {
   @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN)
   @ApiOperation({ summary: 'Create a new heritage site' })
   @ApiResponse({ status: 201, description: 'Site created successfully' })
-  create(@Body() createSiteDto: CreateSiteDto) {
-    return this.sitesService.create(createSiteDto);
+  create(@Body() createSiteDto: CreateSiteDto, @CurrentUser() user: any) {
+    return this.sitesService.create(createSiteDto, user);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all sites with filters and pagination' })
   @ApiResponse({ status: 200, description: 'Sites retrieved successfully' })
-  findAll(@Query() query: QuerySitesDto) {
-    return this.sitesService.findAll(query);
+  findAll(@Query() query: QuerySitesDto, @CurrentUser() user: any) {
+    return this.sitesService.findAll(query, user);
   }
 
   @Get('nearby')
   @ApiOperation({ summary: 'Find sites near coordinates using geospatial query' })
   @ApiResponse({ status: 200, description: 'Nearby sites found' })
-  findNearby(@Query() query: NearbyQueryDto) {
-    return this.sitesService.findNearby(query);
+  findNearby(@Query() query: NearbyQueryDto, @CurrentUser() user: any) {
+    return this.sitesService.findNearby(query, user);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get site by ID' })
   @ApiResponse({ status: 200, description: 'Site found' })
-  findOne(@Param('id') id: string) {
-    return this.sitesService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.sitesService.findOne(id, user);
   }
 
   @Get(':id/statistics')
   @ApiOperation({ summary: 'Get site statistics and related counts' })
   @ApiResponse({ status: 200, description: 'Site statistics retrieved' })
-  getStatistics(@Param('id') id: string) {
-    return this.sitesService.getStatistics(id);
+  getStatistics(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.sitesService.getStatistics(id, user);
   }
 
   @Patch(':id')
   @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN)
   @ApiOperation({ summary: 'Update site details' })
   @ApiResponse({ status: 200, description: 'Site updated successfully' })
-  update(@Param('id') id: string, @Body() updateSiteDto: UpdateSiteDto) {
-    return this.sitesService.update(id, updateSiteDto);
+  update(@Param('id') id: string, @Body() updateSiteDto: UpdateSiteDto, @CurrentUser() user: any) {
+    return this.sitesService.update(id, updateSiteDto, user);
   }
 
   @Delete(':id')

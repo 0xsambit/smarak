@@ -3,12 +3,18 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ApprovalsService } from './approvals.service';
 import { ApprovalsController } from './approvals.controller';
 import { Approval, ApprovalSchema } from '@schemas/approval.schema';
+import { Incident, IncidentSchema } from '@schemas/incident.schema';
+import { Conservation, ConservationSchema } from '@schemas/conservation.schema';
+import { Site, SiteSchema } from '@schemas/site.schema';
 import { User, UserSchema } from '@schemas/user.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Approval.name, schema: ApprovalSchema },
+      { name: Incident.name, schema: IncidentSchema },
+      { name: Conservation.name, schema: ConservationSchema },
+      { name: Site.name, schema: SiteSchema },
       { name: User.name, schema: UserSchema },
     ]),
   ],

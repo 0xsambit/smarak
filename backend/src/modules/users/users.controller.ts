@@ -10,6 +10,7 @@ import {
   UseGuards,
   Headers,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -76,7 +77,7 @@ export class UsersController {
           clerkId: userData.id,
           name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'Unknown',
           email: userData.email_addresses?.[0]?.email_address || 'no-email@example.com',
-          role: userData.public_metadata?.role || UserRole.STATE_ADMIN,
+          role: userData.public_metadata?.role || UserRole.SITE_OFFICER,
         };
         await this.usersService.create(newUser);
         this.logger.log(`User created: ${newUser.clerkId}`);
@@ -138,7 +139,13 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user by ID' })
   @ApiResponse({ status: 200, description: 'User found' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    const actorId = user?._id?.toString?.() || user?.id?.toString?.();
+
+    if (user?.role === UserRole.SITE_OFFICER && actorId !== id) {
+      throw new ForbiddenException('You can only view your own profile');
+    }
+
     return this.usersService.findOne(id);
   }
 

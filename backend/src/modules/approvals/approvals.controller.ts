@@ -29,24 +29,25 @@ export class ApprovalsController {
   constructor(private readonly approvalsService: ApprovalsService) {}
 
   @Post()
+  @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN, UserRole.SITE_OFFICER)
   @ApiOperation({ summary: 'Submit item for approval' })
   @ApiResponse({ status: 201, description: 'Approval created successfully' })
   create(@Body() createApprovalDto: CreateApprovalDto, @CurrentUser() user: any) {
-    return this.approvalsService.create(createApprovalDto, user._id || user.id);
+    return this.approvalsService.create(createApprovalDto, user);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all approval requests' })
   @ApiResponse({ status: 200, description: 'Approvals retrieved successfully' })
-  findAll(@Query() query: QueryApprovalsDto) {
-    return this.approvalsService.findAll(query);
+  findAll(@Query() query: QueryApprovalsDto, @CurrentUser() user: any) {
+    return this.approvalsService.findAll(query, user);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get approval by ID' })
   @ApiResponse({ status: 200, description: 'Approval found' })
-  findOne(@Param('id') id: string) {
-    return this.approvalsService.findOne(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.approvalsService.findOne(id, user);
   }
 
   @Patch(':id')
@@ -57,10 +58,7 @@ export class ApprovalsController {
     @Body() updateApprovalDto: UpdateApprovalDto,
     @CurrentUser() user: any,
   ) {
-    return this.approvalsService.update(id, updateApprovalDto, {
-      id: user._id || user.id,
-      role: user.role,
-    });
+    return this.approvalsService.update(id, updateApprovalDto, user);
   }
 
   @Patch(':id/review')
@@ -72,7 +70,7 @@ export class ApprovalsController {
     @Body() reviewApprovalDto: ReviewApprovalDto,
     @CurrentUser() user: any,
   ) {
-    return this.approvalsService.review(id, reviewApprovalDto, user._id || user.id);
+    return this.approvalsService.review(id, reviewApprovalDto, user);
   }
 
   @Delete(':id')
