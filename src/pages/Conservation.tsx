@@ -174,15 +174,30 @@ const Conservation: React.FC = () => {
 				sitesAPI.getAll({ limit: 1000 }),
 			]);
 
-			setRole((meResponse.data?.role || null) as UserRole | null);
+			const currentRole = (meResponse.data?.role || null) as UserRole | null;
+			const preferredSiteId =
+				typeof meResponse.data?.siteId === "string" ? meResponse.data.siteId : "";
+
+			setRole(currentRole);
 
 			const loadedSites = (sitesResponse.data?.sites || []) as SiteSummary[];
 			setSites(loadedSites);
 			if (loadedSites.length > 0) {
-				setSelectedSite((current) => current || loadedSites[0]._id);
+				setSelectedSite((current) => {
+					if (current) {
+						return current;
+					}
+
+					if (currentRole === "SITE_OFFICER") {
+						return preferredSiteId || loadedSites[0]._id;
+					}
+
+					return "";
+				});
+
 				setFormValues((current) => ({
 					...current,
-					siteId: current.siteId || loadedSites[0]._id,
+					siteId: current.siteId || preferredSiteId || loadedSites[0]._id,
 				}));
 			}
 		} catch (contextError: any) {
@@ -257,15 +272,19 @@ const Conservation: React.FC = () => {
 		setShowForm(true);
 	};
 
+	const resetFormState = () => {
+		setShowForm(false);
+		setEditingProject(null);
+		setFormValues(EMPTY_FORM);
+		setFormError(null);
+	};
+
 	const closeForm = () => {
 		if (submitting) {
 			return;
 		}
 
-		setShowForm(false);
-		setEditingProject(null);
-		setFormValues(EMPTY_FORM);
-		setFormError(null);
+		resetFormState();
 	};
 
 	const handleArchive = async (project: ConservationRecord) => {
@@ -340,7 +359,7 @@ const Conservation: React.FC = () => {
 				await conservationAPI.create(toCreatePayload(formValues));
 			}
 
-			closeForm();
+			resetFormState();
 			await fetchProjects();
 		} catch (submitError: any) {
 			setFormError(

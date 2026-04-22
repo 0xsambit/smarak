@@ -181,15 +181,19 @@ const Sites: React.FC = () => {
 		setShowForm(true);
 	};
 
+	const resetFormState = () => {
+		setShowForm(false);
+		setEditingSite(null);
+		setFormValues(EMPTY_FORM);
+		setFormError(null);
+	};
+
 	const closeForm = () => {
 		if (submitting) {
 			return;
 		}
 
-		setShowForm(false);
-		setEditingSite(null);
-		setFormValues(EMPTY_FORM);
-		setFormError(null);
+		resetFormState();
 	};
 
 	const handleArchive = async (site: SiteRecord) => {
@@ -250,7 +254,7 @@ const Sites: React.FC = () => {
 				await sitesAPI.create(payload);
 			}
 
-			closeForm();
+			resetFormState();
 			await fetchSites();
 		} catch (submitError: any) {
 			setFormError(submitError?.response?.data?.message || "Unable to save site.");

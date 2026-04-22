@@ -32,7 +32,7 @@ export class ConservationController {
   @ApiOperation({ summary: 'Create new conservation project' })
   @ApiResponse({ status: 201, description: 'Conservation project created successfully' })
   create(@Body() createConservationDto: CreateConservationDto, @CurrentUser() user: any) {
-    return this.conservationService.create(createConservationDto, user._id || user.id);
+    return this.conservationService.create(createConservationDto, user);
   }
 
   @Get()
@@ -62,7 +62,7 @@ export class ConservationController {
   @ApiOperation({ summary: 'Archive conservation project' })
   @ApiResponse({ status: 200, description: 'Conservation project archived successfully' })
   remove(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.conservationService.remove(id, user._id || user.id);
+    return this.conservationService.remove(id, user);
   }
 
   @Patch(':id/restore')

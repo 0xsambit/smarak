@@ -24,7 +24,7 @@ import { ClerkAuthGuard } from '@common/guards/clerk-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { UserRole } from '@schemas/user.schema';
+import { User, UserRole } from '@schemas/user.schema';
 
 @ApiTags('users')
 @Controller('users')
@@ -73,22 +73,41 @@ export class UsersController {
 
     switch (eventType) {
       case 'user.created':
+        const createdEmailRaw = userData.email_addresses?.[0]?.email_address;
+        const createdEmail =
+          typeof createdEmailRaw === 'string'
+            ? createdEmailRaw.trim().toLowerCase()
+            : null;
+
+        if (!createdEmail) {
+          this.logger.warn(`Skipping user.created for ${userData.id}: missing email`);
+          break;
+        }
+
         const newUser = {
           clerkId: userData.id,
           name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'Unknown',
-          email: userData.email_addresses?.[0]?.email_address || 'no-email@example.com',
-          role: userData.public_metadata?.role || UserRole.SITE_OFFICER,
+          email: createdEmail,
+          role: this.normalizeWebhookRole(userData.public_metadata?.role) || UserRole.SITE_OFFICER,
         };
         await this.usersService.create(newUser);
         this.logger.log(`User created: ${newUser.clerkId}`);
         break;
 
       case 'user.updated':
-        const updateData = {
+        const updatedEmailRaw = userData.email_addresses?.[0]?.email_address;
+        const updatedEmail =
+          typeof updatedEmailRaw === 'string'
+            ? updatedEmailRaw.trim().toLowerCase()
+            : undefined;
+        const normalizedRole = this.normalizeWebhookRole(userData.public_metadata?.role);
+
+        const updateData: Partial<User> = {
           name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
-          email: userData.email_addresses?.[0]?.email_address,
-          role: userData.public_metadata?.role,
+          ...(updatedEmail ? { email: updatedEmail } : {}),
+          ...(normalizedRole ? { role: normalizedRole } : {}),
         };
+
         await this.usersService.updateByClerkId(userData.id, updateData);
         this.logger.log(`User updated: ${userData.id}`);
         break;
@@ -103,6 +122,16 @@ export class UsersController {
     }
 
     return { success: true };
+  }
+
+  private normalizeWebhookRole(role: unknown): UserRole | null {
+    if (typeof role !== 'string') {
+      return null;
+    }
+
+    return (Object.values(UserRole) as string[]).includes(role)
+      ? (role as UserRole)
+      : null;
   }
 
   @Post()

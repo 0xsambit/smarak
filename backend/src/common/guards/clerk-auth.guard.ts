@@ -76,9 +76,9 @@ export class ClerkAuthGuard implements CanActivate {
       throw new UnauthorizedException('Authenticated Clerk user has no email address');
     }
 
-    const normalizedEmail = email.toLowerCase();
+    const normalizedEmail = email.trim().toLowerCase();
     const existingByClerkId = await this.userModel.findOne({ clerkId }).lean().exec();
-    const existingByEmail = await this.userModel.findOne({ email: normalizedEmail }).lean().exec();
+    const existingByEmail = await this.findUserByEmail(normalizedEmail);
 
     if (
       existingByClerkId &&
@@ -106,36 +106,82 @@ export class ClerkAuthGuard implements CanActivate {
       normalizedEmail.split('@')[0];
 
     const updateQuery = existingUser ? { _id: existingUser._id } : { clerkId };
+    const updatePayload = {
+      clerkId,
+      email: normalizedEmail,
+      name,
+      role: this.resolveRole({
+        clerkId,
+        email: normalizedEmail,
+        metadataRole: clerkUser.publicMetadata?.role,
+        existingRole: existingUser?.role,
+      }),
+      isActive: true,
+    };
 
-    const user = await this.userModel
-      .findOneAndUpdate(
-        updateQuery,
-        {
-          clerkId,
-          email: normalizedEmail,
-          name,
-          role: this.resolveRole({
-            clerkId,
-            email: normalizedEmail,
-            metadataRole: clerkUser.publicMetadata?.role,
-            existingRole: existingUser?.role,
-          }),
-          isActive: true,
-        },
-        {
+    try {
+      const user = await this.userModel
+        .findOneAndUpdate(updateQuery, updatePayload, {
           new: true,
           upsert: !existingUser,
           setDefaultsOnInsert: true,
-        },
-      )
-      .lean()
-      .exec();
+        })
+        .lean()
+        .exec();
 
-    if (!user) {
-      throw new UnauthorizedException('Unable to provision user');
+      if (!user) {
+        throw new UnauthorizedException('Unable to provision user');
+      }
+
+      return user;
+    } catch (error) {
+      if (!this.isDuplicateKeyError(error)) {
+        throw error;
+      }
+
+      const fallbackByEmail = await this.findUserByEmail(normalizedEmail);
+
+      if (!fallbackByEmail) {
+        throw error;
+      }
+
+      if (
+        existingByClerkId &&
+        existingByClerkId._id?.toString() !== fallbackByEmail._id?.toString()
+      ) {
+        throw new UnauthorizedException('User identity conflict. Please contact support.');
+      }
+
+      const recoveredUser = await this.userModel
+        .findOneAndUpdate(
+          { _id: fallbackByEmail._id },
+          {
+            ...updatePayload,
+            role: this.resolveRole({
+              clerkId,
+              email: normalizedEmail,
+              metadataRole: clerkUser.publicMetadata?.role,
+              existingRole: fallbackByEmail.role,
+            }),
+          },
+          {
+            new: true,
+            upsert: false,
+          },
+        )
+        .lean()
+        .exec();
+
+      if (!recoveredUser) {
+        throw new UnauthorizedException('Unable to provision user');
+      }
+
+      this.logger.warn(
+        `Recovered duplicate email conflict by linking clerkId ${clerkId} to existing user ${fallbackByEmail._id?.toString()}`,
+      );
+
+      return recoveredUser;
     }
-
-    return user;
   }
 
   private resolveRole(params: {
@@ -169,5 +215,28 @@ export class ClerkAuthGuard implements CanActivate {
     return (Object.values(UserRole) as string[]).includes(role)
       ? (role as UserRole)
       : null;
+  }
+
+  private async findUserByEmail(email: string) {
+    return this.userModel
+      .findOne({
+        email: {
+          $regex: new RegExp(`^${this.escapeRegex(email)}$`, 'i'),
+        },
+      })
+      .lean()
+      .exec();
+  }
+
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private isDuplicateKeyError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') {
+      return false;
+    }
+
+    return (error as { code?: number }).code === 11000;
   }
 }

@@ -277,7 +277,9 @@ const Approvals: React.FC = () => {
 				]);
 
 			setRole((meResponse.data?.role || null) as UserRole | null);
-			setCurrentUserId((meResponse.data?._id || "") as string);
+			setCurrentUserId(
+				((meResponse.data?._id || meResponse.data?.id || "") as string).trim(),
+			);
 			setSites((sitesResponse.data?.sites || []) as SiteSummary[]);
 			setIncidents((incidentsResponse.data?.incidents || []) as IncidentSummary[]);
 			setProjects((projectsResponse.data?.projects || []) as ConservationSummary[]);
@@ -363,15 +365,19 @@ const Approvals: React.FC = () => {
 		setShowForm(true);
 	};
 
+	const resetFormState = () => {
+		setShowForm(false);
+		setEditingApproval(null);
+		setFormValues(EMPTY_FORM);
+		setFormError(null);
+	};
+
 	const closeForm = () => {
 		if (submitting) {
 			return;
 		}
 
-		setShowForm(false);
-		setEditingApproval(null);
-		setFormValues(EMPTY_FORM);
-		setFormError(null);
+		resetFormState();
 	};
 
 	const handleArchive = async (approval: ApprovalRecord) => {
@@ -447,7 +453,7 @@ const Approvals: React.FC = () => {
 				await approvalsAPI.create(toPayload(formValues));
 			}
 
-			closeForm();
+			resetFormState();
 			await fetchApprovals();
 		} catch (submitError: any) {
 			setFormError(

@@ -1,6 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
+import {
+	ArrowRight,
+	Building2,
+	FileCheck2,
+	MapPinned,
+	ShieldAlert,
+	Wrench,
+} from "lucide-react";
 import ActionQueue from "../components/dashboard/ActionQueue";
 import ActivityTimeline from "../components/dashboard/ActivityTimeline";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -42,6 +50,18 @@ const EMPTY_OVERVIEW: DashboardOverview = {
 	regionSummary: [],
 	criticalAlerts: [],
 	pendingApprovals: [],
+};
+
+const extractId = (value: unknown): string => {
+	if (typeof value === "string") {
+		return value;
+	}
+
+	if (value && typeof value === "object" && "_id" in value) {
+		return extractId((value as { _id?: unknown })._id);
+	}
+
+	return "";
 };
 
 const buildDateRangeLabel = () => {
@@ -187,13 +207,21 @@ const Dashboard: React.FC = () => {
 
 				const sites = sitesResponse.data?.sites || [];
 				const user = meResponse.data as CurrentUserProfile;
+				const preferredSiteId = extractId(user.siteId) || extractId(user.stateId);
 				const preferredSite =
-					sites.find((site: SiteSummary) => site._id === user.siteId) ||
+					sites.find((site: SiteSummary) => site._id === preferredSiteId) ||
 					sites[0] ||
 					null;
+				const defaultScope: DashboardScope =
+					user.role === "SITE_OFFICER"
+						? "site"
+						: user.role === "STATE_ADMIN"
+							? "state"
+							: "national";
 
 				setAllSites(sites);
 				setCurrentUser(user);
+				setScope(defaultScope);
 				setSelectedState((current) => current || preferredSite?.state || "");
 				setSelectedSiteId((current) => current || preferredSite?._id || "");
 				setContextReady(true);
@@ -289,7 +317,7 @@ const Dashboard: React.FC = () => {
 	}
 
 	return (
-		<div className="min-h-screen bg-stone-50 text-stone-900">
+		<div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(245,158,11,0.12),_transparent_30%),linear-gradient(180deg,_#f8f5ef_0%,_#f3efe7_45%,_#f8f7f4_100%)] text-stone-900">
 			<DashboardHeader
 				scope={scope}
 				title={headerTitle}
@@ -300,6 +328,7 @@ const Dashboard: React.FC = () => {
 				siteOptions={siteOptions}
 				selectedSiteId={selectedSiteId}
 				criticalCount={dashboardData.incidentsBySeverity.HIGH}
+				activeRole={currentUser?.role}
 				onScopeChange={setScope}
 				onStateChange={setSelectedState}
 				onSiteChange={setSelectedSiteId}
@@ -310,47 +339,160 @@ const Dashboard: React.FC = () => {
 				}}
 			/>
 
-			<main className="mx-auto max-w-400 space-y-6 p-6">
-				<section className="rounded-lg border border-stone-200 bg-white p-4">
-					<div className="flex flex-wrap items-center justify-between gap-3">
-						<div>
-							<h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-stone-500">
-								Operations Portal
-							</h2>
-							<p className="text-sm text-stone-600">
-								Manage operational entities with role-aware CRUD workflows.
-							</p>
-							<p className="mt-1 text-xs uppercase tracking-[0.12em] text-stone-500">
-								Active Role: {currentUser?.role || "Unknown"}
-							</p>
+			<main className="mx-auto max-w-[1600px] space-y-6 px-4 py-6 sm:px-6">
+				<section className="grid gap-5 xl:grid-cols-[1.4fr_0.95fr]">
+					<div className="overflow-hidden rounded-[30px] border border-stone-200/80 bg-[linear-gradient(135deg,_rgba(24,24,27,0.98),_rgba(41,37,36,0.94)_52%,_rgba(120,53,15,0.82))] p-6 text-white shadow-[0_24px_80px_rgba(28,25,23,0.22)]">
+						<div className="flex flex-wrap items-start justify-between gap-4">
+							<div className="max-w-2xl">
+								<p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-200/80">
+									Operations Portal
+								</p>
+								<h2 className="mt-3 font-serif text-4xl leading-none sm:text-5xl">
+									Monitor risk, workload, and field response from one command deck.
+								</h2>
+								<p className="mt-4 max-w-xl text-sm leading-6 text-stone-200/88 sm:text-base">
+									Use the dashboard to move from national posture to state and site
+									context, then act on the entities that need attention first.
+								</p>
+							</div>
+							<div className="rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm text-stone-100 backdrop-blur">
+								<p className="text-[11px] uppercase tracking-[0.22em] text-stone-300">
+									Live posture
+								</p>
+								<p className="mt-2 text-2xl font-semibold">
+									{dashboardData.kpis.highRiskSites > 0 ? "Elevated" : "Stable"}
+								</p>
+								<p className="mt-2 text-xs text-stone-300">
+									{dashboardData.kpis.highRiskSites} high-risk sites and{" "}
+									{dashboardData.kpis.activeIncidents} active incidents in scope.
+								</p>
+							</div>
+						</div>
+
+						<div className="mt-6 grid gap-3 sm:grid-cols-3">
+							<div className="rounded-2xl border border-white/12 bg-white/8 p-4 backdrop-blur">
+								<p className="text-[11px] uppercase tracking-[0.22em] text-stone-300">
+									Coverage
+								</p>
+								<p className="mt-3 text-3xl font-semibold">
+									{dashboardData.kpis.totalSites}
+								</p>
+								<p className="mt-2 text-sm text-stone-300">
+									Heritage sites visible in the current scope.
+								</p>
+							</div>
+							<div className="rounded-2xl border border-white/12 bg-white/8 p-4 backdrop-blur">
+								<p className="text-[11px] uppercase tracking-[0.22em] text-stone-300">
+									Action queue
+								</p>
+								<p className="mt-3 text-3xl font-semibold">
+									{dashboardData.kpis.pendingApprovals}
+								</p>
+								<p className="mt-2 text-sm text-stone-300">
+									Pending approvals waiting for review.
+								</p>
+							</div>
+							<div className="rounded-2xl border border-white/12 bg-white/8 p-4 backdrop-blur">
+								<p className="text-[11px] uppercase tracking-[0.22em] text-stone-300">
+									Field work
+								</p>
+								<p className="mt-3 text-3xl font-semibold">
+									{dashboardData.kpis.conservationOngoing}
+								</p>
+								<p className="mt-2 text-sm text-stone-300">
+									Ongoing conservation programs underway.
+								</p>
+							</div>
 						</div>
 					</div>
-					<div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+
+					<div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
 						<Link
 							to="/sites"
-							className="rounded-md bg-stone-900 px-4 py-2 text-center text-sm font-medium text-white hover:bg-stone-700">
-							Sites
+							className="group rounded-[26px] border border-stone-200/85 bg-white/92 p-5 shadow-[0_18px_50px_rgba(120,113,108,0.12)] backdrop-blur transition-transform hover:-translate-y-0.5">
+							<div className="flex items-start justify-between gap-4">
+								<div>
+									<p className="text-xs uppercase tracking-[0.22em] text-stone-500">
+										Sites
+									</p>
+									<h3 className="mt-3 text-xl font-semibold text-stone-950">
+										Manage heritage records
+									</h3>
+									<p className="mt-2 text-sm text-stone-600">
+										Create, update, archive, and restore site inventory.
+									</p>
+								</div>
+								<div className="rounded-2xl bg-stone-900 p-3 text-white">
+									<Building2 className="h-5 w-5" />
+								</div>
+							</div>
+							<div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-stone-900">
+								Open sites workspace
+								<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+							</div>
 						</Link>
-						<Link
-							to="/incidents"
-							className="rounded-md border border-stone-300 px-4 py-2 text-center text-sm font-medium text-stone-700 hover:bg-stone-100">
-							Incidents
-						</Link>
-						<Link
-							to="/conservation"
-							className="rounded-md border border-stone-300 px-4 py-2 text-center text-sm font-medium text-stone-700 hover:bg-stone-100">
-							Conservation
-						</Link>
-						<Link
-							to="/approvals"
-							className="rounded-md border border-stone-300 px-4 py-2 text-center text-sm font-medium text-stone-700 hover:bg-stone-100">
-							Approvals
-						</Link>
+
+						<div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+							<Link
+								to="/incidents"
+								className="rounded-[24px] border border-red-100 bg-red-50/90 p-4 text-red-900 shadow-[0_16px_40px_rgba(248,113,113,0.12)]">
+								<div className="flex items-center justify-between gap-3">
+									<div>
+										<p className="text-xs uppercase tracking-[0.22em] text-red-500">
+											Incidents
+										</p>
+										<p className="mt-2 text-2xl font-semibold">
+											{dashboardData.kpis.activeIncidents}
+										</p>
+									</div>
+									<ShieldAlert className="h-5 w-5 text-red-500" />
+								</div>
+								<p className="mt-3 text-sm text-red-700/80">Triage live operational issues.</p>
+							</Link>
+
+							<Link
+								to="/conservation"
+								className="rounded-[24px] border border-emerald-100 bg-emerald-50/90 p-4 text-emerald-950 shadow-[0_16px_40px_rgba(16,185,129,0.12)]">
+								<div className="flex items-center justify-between gap-3">
+									<div>
+										<p className="text-xs uppercase tracking-[0.22em] text-emerald-600">
+											Conservation
+										</p>
+										<p className="mt-2 text-2xl font-semibold">
+											{dashboardData.kpis.conservationOngoing}
+										</p>
+									</div>
+									<Wrench className="h-5 w-5 text-emerald-600" />
+								</div>
+								<p className="mt-3 text-sm text-emerald-800/80">
+									Track restoration delivery.
+								</p>
+							</Link>
+
+							<Link
+								to="/approvals"
+								className="rounded-[24px] border border-amber-100 bg-amber-50/90 p-4 text-amber-950 shadow-[0_16px_40px_rgba(245,158,11,0.14)]">
+								<div className="flex items-center justify-between gap-3">
+									<div>
+										<p className="text-xs uppercase tracking-[0.22em] text-amber-600">
+											Approvals
+										</p>
+										<p className="mt-2 text-2xl font-semibold">
+											{dashboardData.kpis.pendingApprovals}
+										</p>
+									</div>
+									<FileCheck2 className="h-5 w-5 text-amber-600" />
+								</div>
+								<p className="mt-3 text-sm text-amber-800/80">
+									Clear the highest-priority requests.
+								</p>
+							</Link>
+						</div>
 					</div>
 				</section>
 
 				{error ? (
-					<div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+					<div className="rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-800 shadow-sm">
 						{error}
 					</div>
 				) : null}

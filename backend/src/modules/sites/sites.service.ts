@@ -361,6 +361,11 @@ export class SitesService {
         throw new ForbiddenException('Site officer must be assigned to a site');
       }
 
+      const requestedSiteId = this.toIdString(filter._id);
+      if (requestedSiteId && requestedSiteId !== siteId) {
+        throw new ForbiddenException('Site officer can only access the assigned site');
+      }
+
       filter._id = new Types.ObjectId(siteId);
       return;
     }
