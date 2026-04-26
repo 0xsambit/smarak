@@ -3,8 +3,24 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
+    "builder": "swc",
     "deleteOutDir": true,
-    "webpack": false,
-    "tsConfigPath": "tsconfig.json"
+    "swcOptions": {
+      "jsc": {
+        "parser": {
+          "syntax": "typescript",
+          "decorators": true,
+          "tsx": false
+        },
+        "transform": {
+          "legacyDecorator": true,
+          "decoratorMetadata": true
+        },
+        "target": "es2021"
+      },
+      "module": {
+        "type": "commonjs"
+      }
+    }
   }
 }
