@@ -42,13 +42,6 @@ export class IncidentsController {
     return this.incidentsService.findAll(query, user);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get incident by ID' })
-  @ApiResponse({ status: 200, description: 'Incident found' })
-  findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.incidentsService.findOne(id, user);
-  }
-
   @Patch(':id')
   @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN, UserRole.SITE_OFFICER)
   @ApiOperation({ summary: 'Update incident status' })

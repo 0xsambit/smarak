@@ -1,28 +1,18 @@
 import {
+  Body,
   Controller,
   Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  Query,
-  UseGuards,
   Headers,
-  BadRequestException,
-  ForbiddenException,
   Logger,
+  Post,
+  UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Webhook } from 'svix';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { QueryUsersDto } from './dto/query-users.dto';
 import { ClerkAuthGuard } from '@common/guards/clerk-auth.guard';
-import { RolesGuard } from '@common/guards/roles.guard';
-import { Roles } from '@common/decorators/roles.decorator';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { User, UserRole } from '@schemas/user.schema';
 
@@ -46,17 +36,11 @@ export class UsersController {
     @Body() body: any,
   ) {
     const webhookSecret = this.configService.get<string>('clerk.webhookSecret');
-
-    if (!webhookSecret) {
-      throw new BadRequestException('Webhook secret not configured');
-    }
-
-    const wh = new Webhook(webhookSecret);
+    if (!webhookSecret) throw new BadRequestException('Webhook secret not configured');
 
     let event: any;
-
     try {
-      event = wh.verify(JSON.stringify(body), {
+      event = new Webhook(webhookSecret).verify(JSON.stringify(body), {
         'svix-id': svixId,
         'svix-timestamp': svixTimestamp,
         'svix-signature': svixSignature,
@@ -66,92 +50,48 @@ export class UsersController {
       throw new BadRequestException('Invalid webhook signature');
     }
 
-    const eventType = event.type;
     const userData = event.data;
+    this.logger.log(`Processing webhook event: ${event.type}`);
 
-    this.logger.log(`Processing webhook event: ${eventType}`);
-
-    switch (eventType) {
-      case 'user.created':
-        const createdEmailRaw = userData.email_addresses?.[0]?.email_address;
-        const createdEmail =
-          typeof createdEmailRaw === 'string'
-            ? createdEmailRaw.trim().toLowerCase()
-            : null;
-
-        if (!createdEmail) {
+    switch (event.type) {
+      case 'user.created': {
+        const emailRaw = userData.email_addresses?.[0]?.email_address;
+        const email = typeof emailRaw === 'string' ? emailRaw.trim().toLowerCase() : null;
+        if (!email) {
           this.logger.warn(`Skipping user.created for ${userData.id}: missing email`);
           break;
         }
-
-        const newUser = {
+        await this.usersService.create({
           clerkId: userData.id,
           name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || 'Unknown',
-          email: createdEmail,
+          email,
           role: this.normalizeWebhookRole(userData.public_metadata?.role) || UserRole.SITE_OFFICER,
-        };
-        await this.usersService.create(newUser);
-        this.logger.log(`User created: ${newUser.clerkId}`);
+        });
+        this.logger.log(`User created: ${userData.id}`);
         break;
-
-      case 'user.updated':
-        const updatedEmailRaw = userData.email_addresses?.[0]?.email_address;
-        const updatedEmail =
-          typeof updatedEmailRaw === 'string'
-            ? updatedEmailRaw.trim().toLowerCase()
-            : undefined;
-        const normalizedRole = this.normalizeWebhookRole(userData.public_metadata?.role);
-
+      }
+      case 'user.updated': {
+        const emailRaw = userData.email_addresses?.[0]?.email_address;
+        const email = typeof emailRaw === 'string' ? emailRaw.trim().toLowerCase() : undefined;
+        const role = this.normalizeWebhookRole(userData.public_metadata?.role);
         const updateData: Partial<User> = {
           name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
-          ...(updatedEmail ? { email: updatedEmail } : {}),
-          ...(normalizedRole ? { role: normalizedRole } : {}),
+          ...(email ? { email } : {}),
+          ...(role ? { role } : {}),
         };
-
         await this.usersService.updateByClerkId(userData.id, updateData);
         this.logger.log(`User updated: ${userData.id}`);
         break;
-
+      }
       case 'user.deleted':
         await this.usersService.removeByClerkId(userData.id);
         this.logger.log(`User deleted: ${userData.id}`);
         break;
-
       default:
-        this.logger.warn(`Unhandled webhook event type: ${eventType}`);
+        this.logger.warn(`Unhandled webhook event type: ${event.type}`);
     }
 
     return { success: true };
-  }
-
-  private normalizeWebhookRole(role: unknown): UserRole | null {
-    if (typeof role !== 'string') {
-      return null;
-    }
-
-    return (Object.values(UserRole) as string[]).includes(role)
-      ? (role as UserRole)
-      : null;
-  }
-
-  @Post()
-  @UseGuards(ClerkAuthGuard, RolesGuard)
-  @Roles(UserRole.NATIONAL_ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new user (Admin only)' })
-  @ApiResponse({ status: 201, description: 'User created successfully' })
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
-  }
-
-  @Get()
-  @UseGuards(ClerkAuthGuard, RolesGuard)
-  @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all users with pagination' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
-  findAll(@Query() query: QueryUsersDto) {
-    return this.usersService.findAll(query);
   }
 
   @Get('me')
@@ -163,38 +103,8 @@ export class UsersController {
     return user;
   }
 
-  @Get(':id')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get user by ID' })
-  @ApiResponse({ status: 200, description: 'User found' })
-  findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    const actorId = user?._id?.toString?.() || user?.id?.toString?.();
-
-    if (user?.role === UserRole.SITE_OFFICER && actorId !== id) {
-      throw new ForbiddenException('You can only view your own profile');
-    }
-
-    return this.usersService.findOne(id);
-  }
-
-  @Patch(':id')
-  @UseGuards(ClerkAuthGuard, RolesGuard)
-  @Roles(UserRole.NATIONAL_ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update user (Admin only)' })
-  @ApiResponse({ status: 200, description: 'User updated successfully' })
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
-  }
-
-  @Delete(':id')
-  @UseGuards(ClerkAuthGuard, RolesGuard)
-  @Roles(UserRole.NATIONAL_ADMIN)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Soft delete user (Admin only)' })
-  @ApiResponse({ status: 200, description: 'User deleted successfully' })
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
+  private normalizeWebhookRole(role: unknown): UserRole | null {
+    if (typeof role !== 'string') return null;
+    return (Object.values(UserRole) as string[]).includes(role) ? (role as UserRole) : null;
   }
 }

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { Building2, Plus, Search, SquarePen, Trash2, RotateCcw } from "lucide-react";
-import { setAuthTokenProvider, sitesAPI, usersAPI } from "../services/api";
+import { sitesAPI, usersAPI } from "../services/api";
 import type {
 	ProtectionStatus,
 	RiskLevel,
@@ -62,7 +62,7 @@ const toFormValues = (site: SiteRecord): SiteFormValues => ({
 });
 
 const Sites: React.FC = () => {
-	const { isLoaded, getToken } = useAuth();
+	const { isLoaded } = useAuth();
 
 	const [sites, setSites] = useState<SiteRecord[]>([]);
 	const [total, setTotal] = useState(0);
@@ -82,15 +82,6 @@ const Sites: React.FC = () => {
 	const [formValues, setFormValues] = useState<SiteFormValues>(EMPTY_FORM);
 	const [formError, setFormError] = useState<string | null>(null);
 	const [currentRole, setCurrentRole] = useState<UserRole | null>(null);
-
-	useEffect(() => {
-		if (!isLoaded) {
-			return;
-		}
-
-		setAuthTokenProvider(() => getToken());
-		return () => setAuthTokenProvider(null);
-	}, [getToken, isLoaded]);
 
 	useEffect(() => {
 		if (!isLoaded) {
@@ -140,7 +131,7 @@ const Sites: React.FC = () => {
 				...(stateFilter.trim() ? { state: stateFilter.trim() } : {}),
 				...(riskFilter ? { riskLevel: riskFilter } : {}),
 				...(protectionFilter ? { protectionStatus: protectionFilter } : {}),
-				archived: showArchived,
+				...(showArchived ? { archived: true } : {}),
 			});
 
 			const payload = data as SitesListResponse;

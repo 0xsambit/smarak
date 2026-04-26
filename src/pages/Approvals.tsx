@@ -15,7 +15,6 @@ import {
 	approvalsAPI,
 	conservationAPI,
 	incidentsAPI,
-	setAuthTokenProvider,
 	sitesAPI,
 	usersAPI,
 } from "../services/api";
@@ -146,7 +145,7 @@ const toFormValues = (approval: ApprovalRecord): ApprovalFormValues => ({
 });
 
 const Approvals: React.FC = () => {
-	const { isLoaded, getToken } = useAuth();
+	const { isLoaded } = useAuth();
 
 	const [role, setRole] = useState<UserRole | null>(null);
 	const [currentUserId, setCurrentUserId] = useState("");
@@ -170,15 +169,6 @@ const Approvals: React.FC = () => {
 	const [editingApproval, setEditingApproval] = useState<ApprovalRecord | null>(null);
 	const [formValues, setFormValues] = useState<ApprovalFormValues>(EMPTY_FORM);
 	const [formError, setFormError] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (!isLoaded) {
-			return;
-		}
-
-		setAuthTokenProvider(() => getToken());
-		return () => setAuthTokenProvider(null);
-	}, [getToken, isLoaded]);
 
 	const canReview = role === "NATIONAL_ADMIN" || role === "STATE_ADMIN";
 	const canArchive = role === "NATIONAL_ADMIN";
@@ -305,7 +295,7 @@ const Approvals: React.FC = () => {
 				limit: PAGE_SIZE,
 				...(selectedStatus ? { status: selectedStatus } : {}),
 				...(selectedType ? { type: selectedType } : {}),
-				archived: showArchived,
+				...(showArchived ? { archived: true } : {}),
 			});
 
 			setApprovals((data?.approvals || []) as ApprovalRecord[]);

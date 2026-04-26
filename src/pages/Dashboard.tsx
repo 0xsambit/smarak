@@ -5,7 +5,6 @@ import {
 	ArrowRight,
 	Building2,
 	FileCheck2,
-	MapPinned,
 	ShieldAlert,
 	Wrench,
 } from "lucide-react";
@@ -20,7 +19,6 @@ import {
 	approvalsAPI,
 	dashboardAPI,
 	incidentsAPI,
-	setAuthTokenProvider,
 	sitesAPI,
 	usersAPI,
 } from "../services/api";
@@ -88,16 +86,7 @@ const Dashboard: React.FC = () => {
 	const [loading, setLoading] = useState(true);
 	const [contextReady, setContextReady] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const { isLoaded, getToken } = useAuth();
-
-	useEffect(() => {
-		if (!isLoaded) {
-			return;
-		}
-
-		setAuthTokenProvider(() => getToken());
-		return () => setAuthTokenProvider(null);
-	}, [getToken, isLoaded]);
+	const { isLoaded } = useAuth();
 
 	const stateOptions = useMemo(
 		() =>
@@ -364,7 +353,7 @@ const Dashboard: React.FC = () => {
 								</p>
 								<p className="mt-2 text-xs text-stone-300">
 									{dashboardData.kpis.highRiskSites} high-risk sites and{" "}
-									{dashboardData.kpis.activeIncidents} active incidents in scope.
+									{dashboardData.kpis.activeIncidents} incidents in scope.
 								</p>
 							</div>
 						</div>
@@ -389,7 +378,7 @@ const Dashboard: React.FC = () => {
 									{dashboardData.kpis.pendingApprovals}
 								</p>
 								<p className="mt-2 text-sm text-stone-300">
-									Pending approvals waiting for review.
+									Total approvals in scope.
 								</p>
 							</div>
 							<div className="rounded-2xl border border-white/12 bg-white/8 p-4 backdrop-blur">
@@ -400,7 +389,7 @@ const Dashboard: React.FC = () => {
 									{dashboardData.kpis.conservationOngoing}
 								</p>
 								<p className="mt-2 text-sm text-stone-300">
-									Ongoing conservation programs underway.
+									Total conservation projects in scope.
 								</p>
 							</div>
 						</div>

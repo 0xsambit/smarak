@@ -68,13 +68,11 @@ export class Incident extends Document {
 
 export const IncidentSchema = SchemaFactory.createForClass(Incident);
 
-// Create indexes
 IncidentSchema.index({ siteId: 1, status: 1 });
 IncidentSchema.index({ severity: 1 });
 IncidentSchema.index({ createdAt: -1 });
 IncidentSchema.index({ isDeleted: 1, status: 1, createdAt: -1 });
 
-// Virtual field for days open
 IncidentSchema.virtual('daysOpen').get(function () {
   if (this.status === IncidentStatus.RESOLVED && this.resolvedAt) {
     const diffTime = Math.abs(this.resolvedAt.getTime() - this.createdAt.getTime());

@@ -1,25 +1,23 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserRole } from '@schemas/user.schema';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { QueryUsersDto } from './dto/query-users.dto';
+import { User } from '@schemas/user.schema';
+
+interface CreateUserPayload {
+  clerkId: string;
+  email: string;
+  name: string;
+  role: User['role'];
+}
 
 @Injectable()
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    const normalizedEmail = createUserDto.email.trim().toLowerCase();
-    const existingByClerkId = await this.userModel
-      .findOne({ clerkId: createUserDto.clerkId })
-      .lean()
-      .exec();
-    const existingByEmail = await this.userModel
-      .findOne({ email: normalizedEmail })
-      .lean()
-      .exec();
+  async create(payload: CreateUserPayload): Promise<User> {
+    const email = payload.email.trim().toLowerCase();
+    const existingByClerkId = await this.userModel.findOne({ clerkId: payload.clerkId }).lean().exec();
+    const existingByEmail = await this.userModel.findOne({ email }).lean().exec();
 
     if (
       existingByClerkId &&
@@ -32,116 +30,29 @@ export class UsersService {
     const existingUser = existingByClerkId || existingByEmail;
 
     if (existingUser) {
-      const updatedUser = await this.userModel
-        .findByIdAndUpdate(
-          existingUser._id,
-          {
-            ...createUserDto,
-            email: normalizedEmail,
-            isActive: true,
-          },
-          { new: true },
-        )
+      const updated = await this.userModel
+        .findByIdAndUpdate(existingUser._id, { ...payload, email, isActive: true }, { new: true })
         .exec();
-
-      if (!updatedUser) {
-        throw new ConflictException('Unable to update existing user');
-      }
-
-      return updatedUser;
+      if (!updated) throw new ConflictException('Unable to update existing user');
+      return updated;
     }
 
-    const user = new this.userModel({
-      ...createUserDto,
-      email: normalizedEmail,
-    });
-    return user.save();
-  }
-
-  async findAll(query: QueryUsersDto): Promise<{ users: any[]; total: number; page: number; limit: number }> {
-    const { page = 1, limit = 10, role, search } = query;
-    const skip = (page - 1) * limit;
-
-    const filter: any = {};
-
-    if (role) {
-      filter.role = role;
-    }
-
-    if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-      ];
-    }
-
-    const [users, total] = await Promise.all([
-      this.userModel.find(filter).skip(skip).limit(limit).lean().exec(),
-      this.userModel.countDocuments(filter),
-    ]);
-
-    return {
-      users,
-      total,
-      page,
-      limit,
-    };
-  }
-
-  async findOne(id: string): Promise<any> {
-    const user = await this.userModel.findById(id).lean().exec();
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
-  }
-
-  async findByClerkId(clerkId: string): Promise<any | null> {
-    return this.userModel.findOne({ clerkId }).lean().exec();
-  }
-
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-    const user = await this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true }).exec();
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
+    return new this.userModel({ ...payload, email }).save();
   }
 
   async updateByClerkId(clerkId: string, updateData: Partial<User>): Promise<User> {
-    const normalizedEmail =
+    const email =
       typeof updateData.email === 'string' ? updateData.email.trim().toLowerCase() : undefined;
-
-    const payload = {
-      ...updateData,
-      ...(normalizedEmail ? { email: normalizedEmail } : {}),
-    };
+    const payload = { ...updateData, ...(email ? { email } : {}) };
 
     let user = await this.userModel.findOneAndUpdate({ clerkId }, payload, { new: true }).exec();
-
-    if (!user && normalizedEmail) {
+    if (!user && email) {
       user = await this.userModel
-        .findOneAndUpdate({ email: normalizedEmail }, { ...payload, clerkId }, { new: true })
+        .findOneAndUpdate({ email }, { ...payload, clerkId }, { new: true })
         .exec();
     }
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
+    if (!user) throw new NotFoundException('User not found');
     return user;
-  }
-
-  async remove(id: string): Promise<void> {
-    const result = await this.userModel.findByIdAndUpdate(id, { isActive: false }).exec();
-
-    if (!result) {
-      throw new NotFoundException('User not found');
-    }
   }
 
   async removeByClerkId(clerkId: string): Promise<void> {

@@ -7,7 +7,7 @@ export default function SignupPage() {
 		<div className="relative min-h-screen bg-linear-to-br from-black via-neutral-950 to-black text-white instrument-sans-regular">
 			<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(196,247,60,0.06),transparent_30%),radial-gradient(circle_at_80%_10%,rgba(120,119,198,0.08),transparent_30%)]" />
 			<div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.06),transparent_30%),linear-gradient(240deg,rgba(255,255,255,0.05),transparent_35%)]" />
-			{/* Back to Home Link */}
+			{}
 			<Link
 				to="/"
 				className="absolute top-6 left-6 z-20 flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-zinc-300 backdrop-blur-sm transition hover:text-white hover:bg-white/10">

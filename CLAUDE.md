@@ -31,9 +31,19 @@ npm run test
 npm run test:watch
 ```
 
-> There is no automated test script in root or backend `package.json` that covers both apps. Run lint as the primary validation step after changes.
+### Testing
+
+- Frontend has no test runner — `npm run lint` is the validation step after changes.
+- Backend uses Jest with a custom config at `backend/test/jest.config.ts` and `mongodb-memory-server` for integration tests.
+  - All tests: `cd backend && npm test` (runs `jest --config ./test/jest.config.ts --runInBand`)
+  - Single file: `cd backend && npx jest --config ./test/jest.config.ts path/to/file.spec.ts`
+  - Watch: `cd backend && npm run test:watch`
 
 Swagger UI is available at `http://localhost:8080/docs` when the backend is running.
+
+### Canonical setup/API docs
+
+For setup walkthroughs and API usage, defer to `GETTING_STARTED.md` (root) and `backend/README.md` rather than duplicating their content here.
 
 ## Architecture
 

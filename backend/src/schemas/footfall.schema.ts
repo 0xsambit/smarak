@@ -24,6 +24,5 @@ export class Footfall extends Document {
 
 export const FootfallSchema = SchemaFactory.createForClass(Footfall);
 
-// Create compound index for efficient queries
 FootfallSchema.index({ siteId: 1, date: -1 });
 FootfallSchema.index({ date: -1 });

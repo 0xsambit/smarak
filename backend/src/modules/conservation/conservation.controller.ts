@@ -42,13 +42,6 @@ export class ConservationController {
     return this.conservationService.findAll(query, user);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get conservation project by ID' })
-  @ApiResponse({ status: 200, description: 'Conservation project found' })
-  findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.conservationService.findOne(id, user);
-  }
-
   @Patch(':id')
   @Roles(UserRole.NATIONAL_ADMIN, UserRole.STATE_ADMIN)
   @ApiOperation({ summary: 'Update conservation project' })

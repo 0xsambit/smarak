@@ -70,7 +70,6 @@ export class Conservation extends Document {
 
 export const ConservationSchema = SchemaFactory.createForClass(Conservation);
 
-// Create indexes
 ConservationSchema.index({ siteId: 1, status: 1 });
 ConservationSchema.index({ status: 1 });
 ConservationSchema.index({ startDate: 1 });

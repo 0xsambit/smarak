@@ -3,25 +3,33 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.getHttpAdapter().getInstance().set('etag', false);
+
+  app.use('/api', (_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    next();
+  });
+
   const configService = app.get(ConfigService);
 
-  // Security middleware
   app.use(helmet());
 
-  // CORS configuration
   const corsOrigins = configService.get<string[]>('app.corsOrigins') || ['http://localhost:5173'];
   app.enableCors({
     origin: corsOrigins,
     credentials: true,
   });
 
-  // Global validation pipe with strict settings
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -33,13 +41,10 @@ async function bootstrap() {
     }),
   );
 
-  // Global exception filter
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  // API prefix
   app.setGlobalPrefix('api');
 
-  // Swagger documentation setup
   const config = new DocumentBuilder()
     .setTitle('Heritage Site Management API')
     .setDescription(
@@ -60,7 +65,6 @@ async function bootstrap() {
     .addTag('incidents', 'Incident tracking and reporting')
     .addTag('conservation', 'Conservation project management')
     .addTag('approvals', 'Approval workflow system')
-    .addTag('uploads', 'GridFS image upload and retrieval')
     .addTag('dashboard', 'Dashboard analytics and KPIs')
     .build();
 

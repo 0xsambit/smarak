@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsEnum, IsMongoId, Min, IsBoolean } from 'class-validator';
+import { IsInt, IsOptional, IsEnum, IsMongoId, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IncidentStatus, IncidentSeverity } from '@schemas/incident.schema';
@@ -39,6 +39,5 @@ export class QueryIncidentsDto {
   })
   @IsOptional()
   @Transform(({ value }) => value === true || value === 'true' || value === '1')
-  @IsBoolean()
-  archived?: boolean = false;
+  archived?: boolean | string = false;
 }

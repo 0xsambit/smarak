@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsEnum, Min, IsBoolean } from 'class-validator';
+import { IsInt, IsOptional, IsEnum, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ApprovalStatus, ApprovalType } from '@schemas/approval.schema';
@@ -34,6 +34,5 @@ export class QueryApprovalsDto {
   })
   @IsOptional()
   @Transform(({ value }) => value === true || value === 'true' || value === '1')
-  @IsBoolean()
-  archived?: boolean = false;
+  archived?: boolean | string = false;
 }

@@ -43,13 +43,6 @@ export class ApprovalsController {
     return this.approvalsService.findAll(query, user);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get approval by ID' })
-  @ApiResponse({ status: 200, description: 'Approval found' })
-  findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.approvalsService.findOne(id, user);
-  }
-
   @Patch(':id')
   @ApiOperation({ summary: 'Edit pending approval request' })
   @ApiResponse({ status: 200, description: 'Approval updated successfully' })

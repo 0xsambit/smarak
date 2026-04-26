@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, IsEnum, Min, IsBoolean } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsEnum, Min } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ProtectionStatus, RiskLevel } from '@schemas/site.schema';
@@ -44,6 +44,5 @@ export class QuerySitesDto {
   })
   @IsOptional()
   @Transform(({ value }) => value === true || value === 'true' || value === '1')
-  @IsBoolean()
-  archived?: boolean = false;
+  archived?: boolean | string = false;
 }

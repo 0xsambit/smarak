@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node *)",
+      "Bash(npx nest *)",
+      "Bash(npm run *)",
+      "Bash(grep -v \"\\\\.tsx$:\\\\s*//\")",
+      "Bash(rm D:/smarak/backend/src/modules/users/dto/create-user.dto.ts D:/smarak/backend/src/modules/users/dto/update-user.dto.ts D:/smarak/backend/src/modules/users/dto/query-users.dto.ts)",
+      "Bash(rmdir D:/smarak/backend/src/modules/users/dto)"
+    ]
+  }
+}

@@ -15,7 +15,7 @@ export enum RiskLevel {
 
 export interface Coordinates {
   type: string;
-  coordinates: [number, number]; // [longitude, latitude]
+  coordinates: [number, number]; 
 }
 
 @Schema({ timestamps: true })
@@ -73,14 +73,12 @@ export class Site extends Document {
 
 export const SiteSchema = SchemaFactory.createForClass(Site);
 
-// Create 2dsphere index for geospatial queries
 SiteSchema.index({ coordinates: '2dsphere' });
 SiteSchema.index({ state: 1 });
 SiteSchema.index({ riskLevel: 1 });
 SiteSchema.index({ protectionStatus: 1 });
 SiteSchema.index({ isDeleted: 1, state: 1 });
 
-// Virtual field for days since last inspection
 SiteSchema.virtual('daysSinceInspection').get(function () {
   if (!this.lastInspectionDate) return null;
   const diffTime = Math.abs(new Date().getTime() - this.lastInspectionDate.getTime());

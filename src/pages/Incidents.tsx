@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { AlertTriangle, Plus, Search, SquarePen, Trash2, RotateCcw } from "lucide-react";
-import { incidentsAPI, setAuthTokenProvider, sitesAPI, usersAPI } from "../services/api";
+import { incidentsAPI, sitesAPI, usersAPI } from "../services/api";
 
 type UserRole = "NATIONAL_ADMIN" | "STATE_ADMIN" | "SITE_OFFICER";
 type IncidentType = "STRUCTURAL" | "VANDALISM" | "OVERCROWDING" | "ENVIRONMENTAL" | "SECURITY";
@@ -108,7 +108,7 @@ const toFormValues = (incident: IncidentRecord): IncidentFormValues => ({
 });
 
 const Incidents: React.FC = () => {
-	const { isLoaded, getToken } = useAuth();
+	const { isLoaded } = useAuth();
 
 	const [role, setRole] = useState<UserRole | null>(null);
 	const [sites, setSites] = useState<SiteSummary[]>([]);
@@ -129,15 +129,6 @@ const Incidents: React.FC = () => {
 	const [editingIncident, setEditingIncident] = useState<IncidentRecord | null>(null);
 	const [formValues, setFormValues] = useState<IncidentFormValues>(EMPTY_FORM);
 	const [formError, setFormError] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (!isLoaded) {
-			return;
-		}
-
-		setAuthTokenProvider(() => getToken());
-		return () => setAuthTokenProvider(null);
-	}, [getToken, isLoaded]);
 
 	const canArchive = role === "NATIONAL_ADMIN" || role === "STATE_ADMIN";
 
@@ -219,7 +210,7 @@ const Incidents: React.FC = () => {
 				...(selectedSite ? { siteId: selectedSite } : {}),
 				...(selectedSeverity ? { severity: selectedSeverity } : {}),
 				...(selectedStatus ? { status: selectedStatus } : {}),
-				archived: showArchived,
+				...(showArchived ? { archived: true } : {}),
 			});
 
 			setIncidents((data?.incidents || []) as IncidentRecord[]);

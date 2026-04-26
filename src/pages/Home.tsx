@@ -34,7 +34,7 @@ export default function Home() {
 
 	return (
 		<div className="relative min-h-screen bg-black text-white overflow-x-hidden">
-			{/* Navigation */}
+			{}
 			<nav className="fixed top-0 left-0 right-0 z-50 px-6 py-4 backdrop-blur-md bg-black/30 border-b border-white/5">
 				<div className="mx-auto max-w-7xl flex items-center justify-between">
 					<Link to="/" className="flex items-center gap-3 text-xl">
@@ -82,7 +82,7 @@ export default function Home() {
 				</div>
 			</nav>
 
-			{/* Hero Section with Video Background */}
+			{}
 			<section className="relative min-h-screen flex items-center justify-center overflow-hidden">
 				<video
 					ref={videoRef}
@@ -318,7 +318,7 @@ export default function Home() {
 						</p>
 					</div>
 
-					{/* Heritage Site Images */}
+					{}
 					<div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-12">
 						{heritageImages.map((img, index) => (
 							<div
@@ -333,7 +333,7 @@ export default function Home() {
 						))}
 					</div>
 
-					{/* Trust Badges */}
+					{}
 					<div className="grid md:grid-cols-3 gap-8 mt-16">
 						{[
 							{
@@ -371,7 +371,7 @@ export default function Home() {
 				</div>
 			</section>
 
-			{/* CTA Section */}
+			{}
 			<section className="relative py-32 px-6 bg-zinc-950">
 				<div className="max-w-4xl mx-auto text-center">
 					<h2 className="instrument-serif-regular text-4xl md:text-6xl text-white mb-6">
@@ -402,11 +402,11 @@ export default function Home() {
 				</div>
 			</section>
 
-			{/* Footer */}
+			{}
 			<footer className="relative border-t border-zinc-800 py-16 px-6">
 				<div className="max-w-7xl mx-auto">
 					<div className="grid md:grid-cols-4 gap-12">
-						{/* Brand */}
+						{}
 						<div>
 							<Link to="/" className="flex items-center gap-3 text-xl">
 								<Landmark className="size-6 text-emerald-400" />

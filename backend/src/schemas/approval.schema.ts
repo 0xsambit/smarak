@@ -61,7 +61,6 @@ export class Approval extends Document {
 
 export const ApprovalSchema = SchemaFactory.createForClass(Approval);
 
-// Create indexes
 ApprovalSchema.index({ status: 1, submittedBy: 1 });
 ApprovalSchema.index({ type: 1 });
 ApprovalSchema.index({ createdAt: -1 });

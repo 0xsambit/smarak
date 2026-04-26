@@ -14,7 +14,6 @@ import { SitesService } from './sites.service';
 import { CreateSiteDto } from './dto/create-site.dto';
 import { UpdateSiteDto } from './dto/update-site.dto';
 import { QuerySitesDto } from './dto/query-sites.dto';
-import { NearbyQueryDto } from './dto/nearby-query.dto';
 import { ClerkAuthGuard } from '@common/guards/clerk-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -41,27 +40,6 @@ export class SitesController {
   @ApiResponse({ status: 200, description: 'Sites retrieved successfully' })
   findAll(@Query() query: QuerySitesDto, @CurrentUser() user: any) {
     return this.sitesService.findAll(query, user);
-  }
-
-  @Get('nearby')
-  @ApiOperation({ summary: 'Find sites near coordinates using geospatial query' })
-  @ApiResponse({ status: 200, description: 'Nearby sites found' })
-  findNearby(@Query() query: NearbyQueryDto, @CurrentUser() user: any) {
-    return this.sitesService.findNearby(query, user);
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Get site by ID' })
-  @ApiResponse({ status: 200, description: 'Site found' })
-  findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.sitesService.findOne(id, user);
-  }
-
-  @Get(':id/statistics')
-  @ApiOperation({ summary: 'Get site statistics and related counts' })
-  @ApiResponse({ status: 200, description: 'Site statistics retrieved' })
-  getStatistics(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.sitesService.getStatistics(id, user);
   }
 
   @Patch(':id')

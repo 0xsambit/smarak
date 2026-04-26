@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import { Wrench, Plus, Search, SquarePen, Trash2, RotateCcw } from "lucide-react";
-import { conservationAPI, setAuthTokenProvider, sitesAPI, usersAPI } from "../services/api";
+import { conservationAPI, sitesAPI, usersAPI } from "../services/api";
 
 type UserRole = "NATIONAL_ADMIN" | "STATE_ADMIN" | "SITE_OFFICER";
 type ConservationStatus = "PLANNED" | "ONGOING" | "COMPLETED" | "CANCELLED";
@@ -112,7 +112,7 @@ const toFormValues = (project: ConservationRecord): ConservationFormValues => ({
 });
 
 const Conservation: React.FC = () => {
-	const { isLoaded, getToken } = useAuth();
+	const { isLoaded } = useAuth();
 
 	const [role, setRole] = useState<UserRole | null>(null);
 	const [sites, setSites] = useState<SiteSummary[]>([]);
@@ -132,15 +132,6 @@ const Conservation: React.FC = () => {
 	const [editingProject, setEditingProject] = useState<ConservationRecord | null>(null);
 	const [formValues, setFormValues] = useState<ConservationFormValues>(EMPTY_FORM);
 	const [formError, setFormError] = useState<string | null>(null);
-
-	useEffect(() => {
-		if (!isLoaded) {
-			return;
-		}
-
-		setAuthTokenProvider(() => getToken());
-		return () => setAuthTokenProvider(null);
-	}, [getToken, isLoaded]);
 
 	const canManage = role === "NATIONAL_ADMIN" || role === "STATE_ADMIN";
 	const canArchive = role === "NATIONAL_ADMIN";
@@ -222,7 +213,7 @@ const Conservation: React.FC = () => {
 				limit: PAGE_SIZE,
 				...(selectedSite ? { siteId: selectedSite } : {}),
 				...(selectedStatus ? { status: selectedStatus } : {}),
-				archived: showArchived,
+				...(showArchived ? { archived: true } : {}),
 			});
 
 			setProjects((data?.projects || []) as ConservationRecord[]);
